@@ -28,7 +28,7 @@ class _Vertex:
     type: str
     neighbours: set[_Vertex]
 
-    def __init__(self, item: Any, type: str) -> None:
+    def __init__(self, item: Any, kind: str) -> None:
         """Initialize a new vertex with the given item and kind.
 
         This vertex is initialized with no neighbours.
@@ -37,7 +37,7 @@ class _Vertex:
             - kind in {'user', 'book'}
         """
         self.item = item
-        self.type = type
+        self.type = kind
         self.neighbours = set()
 
     def degree(self) -> int:
@@ -61,6 +61,7 @@ class _Vertex:
 
         return numerator / denominator
 
+
 class Graph:
     """A graph used to represent a book review network.
     """
@@ -74,7 +75,7 @@ class Graph:
         """Initialize an empty graph (no vertices or edges)."""
         self._vertices = {}
 
-    def add_vertex(self, item: Any, type: str) -> None:
+    def add_vertex(self, item: Any, kind: str) -> None:
         """Add a vertex with the given item and kind to this graph.
 
         The new vertex is not adjacent to any other vertices.
@@ -84,7 +85,7 @@ class Graph:
             - kind in {'user', 'book'}
         """
         if item not in self._vertices:
-            self._vertices[item] = _Vertex(item, type)
+            self._vertices[item] = _Vertex(item, kind)
 
     def add_edge(self, item1: Any, item2: Any) -> None:
         """Add an edge between the two vertices with the given items in this graph.
