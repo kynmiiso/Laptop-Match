@@ -9,26 +9,26 @@ from python_ta.contracts import check_contracts
 
 
 class _Vertex:
-    """A vertex in a laptop recommendation graph, used to represent the laptop's specs, including .
-
-    Each vertex item is either a user id or book title. Both are represented as strings,
-    even though we've kept the type annotation as Any to be consistent with lecture.
+    """A vertex in a laptop recommendation graph, used to represent the laptop's specs, including 'name', 'price',
+    'processor', 'ram', 'os', 'storage', 'display (inches)', 'rating' represented by strings.
 
     Instance Attributes:
-        - item: The data stored in this vertex, representing a user or book.
-        - kind: The type of this vertex: 'user' or 'book'.
+        - item: The data stored in this vertex.
+        - kind: The type of this vertex, one of: 'name', 'price', 'processor', 'ram', 'os',
+        'storage', 'display size', 'rating'
         - neighbours: The vertices that are adjacent to this vertex.
 
     Representation Invariants:
         - self not in self.neighbours
         - all(self in u.neighbours for u in self.neighbours)
-        - self.kind in {'user', 'book'}
+        - self.kind in {'name', 'price', 'processor', 'ram', 'os',
+        'storage', 'display size', 'rating'}
     """
     item: Any
-    type: str
+    kind: str
     neighbours: set[_Vertex]
 
-    def __init__(self, item: Any, kind: str) -> None:
+    def __init__(self, item: Any, name: str) -> None:
         """Initialize a new vertex with the given item and kind.
 
         This vertex is initialized with no neighbours.
@@ -37,7 +37,7 @@ class _Vertex:
             - kind in {'user', 'book'}
         """
         self.item = item
-        self.type = kind
+        self.name = name
         self.neighbours = set()
 
     def degree(self) -> int:
@@ -49,8 +49,7 @@ class _Vertex:
     ############################################################################
     def similarity_score(self, other: _Vertex) -> float:
         """Return the similarity score between this vertex and other.
-
-        See Assignment handout for definition of similarity score.
+        If this vertex has the same item as another vertex, and they are both of the same kind,
         """
 
         if len(self.neighbours) == 0 or len(other.neighbours) == 0:
@@ -75,7 +74,7 @@ class Graph:
         """Initialize an empty graph (no vertices or edges)."""
         self._vertices = {}
 
-    def add_vertex(self, item: Any, kind: str) -> None:
+    def add_vertex(self, item: Any, type: str) -> None:
         """Add a vertex with the given item and kind to this graph.
 
         The new vertex is not adjacent to any other vertices.
@@ -85,7 +84,7 @@ class Graph:
             - kind in {'user', 'book'}
         """
         if item not in self._vertices:
-            self._vertices[item] = _Vertex(item, kind)
+            self._vertices[item] = _Vertex(item, type)
 
     def add_edge(self, item1: Any, item2: Any) -> None:
         """Add an edge between the two vertices with the given items in this graph.
