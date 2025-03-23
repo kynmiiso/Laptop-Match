@@ -4,16 +4,21 @@ from __future__ import annotations
 
 import csv
 from typing import Any, Optional
-
 from python_ta.contracts import check_contracts
+from dataclasses import dataclass
+import pandas as pd
 
+# class _Id:
+#     """Holds data, containing id and rating"""
+#     id: int
+#     rating: float
 
 class _Vertex:
     """A vertex in a laptop recommendation graph, used to represent the laptop's specs, including 'name', 'price',
     'processor', 'ram', 'os', 'storage', 'display (inches)', 'rating' represented by strings.
 
     Instance Attributes:
-        - item: The data stored in this vertex.
+        - item: The data stored in this vertex, holding both id and rating in id
         - kind: The type of this vertex, one of: 'name', 'price', 'processor', 'ram', 'os',
         'storage', 'display size', 'rating'
         - neighbours: The vertices that are adjacent to this vertex.
@@ -28,7 +33,7 @@ class _Vertex:
     kind: str
     neighbours: set[_Vertex]
 
-    def __init__(self, item: Any, name: str) -> None:
+    def __init__(self, item: Any, kind: str) -> None:
         """Initialize a new vertex with the given item and kind.
 
         This vertex is initialized with no neighbours.
@@ -37,16 +42,9 @@ class _Vertex:
             - kind in {'user', 'book'}
         """
         self.item = item
-        self.name = name
+        self.kind = kind
         self.neighbours = set()
 
-    def degree(self) -> int:
-        """Return the degree of this vertex."""
-        return len(self.neighbours)
-
-    ############################################################################
-    # Part 2, Q2a
-    ############################################################################
     def similarity_score(self, other: _Vertex) -> float:
         """Return the similarity score between this vertex and other.
         If this vertex has the same item as another vertex, and they are both of the same kind,
@@ -69,10 +67,12 @@ class Graph:
     #         A collection of the vertices contained in this graph.
     #         Maps item to _Vertex object.
     _vertices: dict[Any, _Vertex]
+    _ratings: dict[int, float]
 
     def __init__(self) -> None:
         """Initialize an empty graph (no vertices or edges)."""
         self._vertices = {}
+        self._ratings = {}
 
     def add_vertex(self, item: Any, type: str) -> None:
         """Add a vertex with the given item and kind to this graph.
@@ -103,13 +103,121 @@ class Graph:
         else:
             raise ValueError
 
-    def adjacent(self, item1: Any, item2: Any) -> bool:
-        """Return whether item1 and item2 are adjacent vertices in this graph.
+    def add_rating(self, id: int, rating: float) -> None:
+        """Adds a rating to the graph"""
+        self._ratings[id] = rating
 
-        Return False if item1 or item2 do not appear as vertices in this graph.
+    def get_neighbours(self, item: Any) -> dict:
+        """Return a set of the neighbours of the given item.
+
+        Note that the *items* are returned, not the _Vertex objects themselves.
+
+        Raise a ValueError if item does not appear as a vertex in this graph.
         """
-        if item1 in self._vertices and item2 in self._vertices:
-            v1 = self._vertices[item1]
-            return any(v2.item == item2 for v2 in v1.neighbours)
+        if item in self._vertices:
+            v = self._vertices[item]
+            return {neighbour.kind: neighbour.item for neighbour in v.neighbours}
         else:
-            return False
+            raise ValueError
+
+    def get_similarity_score(self, item1: Any, item2: Any) -> float:
+        """Return the similarity score between the two given items in this graph.
+
+        Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
+
+        >>> g = Graph()
+        >>> for i in range(0, 6):
+        ...     g.add_vertex(str(i), kind='user')
+        >>> g.add_edge('0', '2')
+        >>> g.add_edge('0', '3')
+        >>> g.add_edge('0', '4')
+        >>> g.add_edge('1', '3')
+        >>> g.add_edge('1', '4')
+        >>> g.add_edge('1', '5')
+        >>> g.get_similarity_score('0', '1')
+        0.5
+        """
+
+        if item1 not in self._vertices or item2 not in self._vertices:
+            raise ValueError
+        else:
+            v1 = self._vertices[item1]
+            v2 = self._vertices[item2]
+            return v1.similarity_score(v2)
+
+    def recommended_laptops(self, specs: int, limit: int):
+        """Get recommended laptops"""
+        recommended_books_dict = {}
+
+        for vertex in self._vertices:
+            vertex_obj = self._vertices[vertex]
+            if vertex != specs and vertex_obj.kind == 'id':
+                similarity_score = self.get_similarity_score(specs, vertex)
+                if similarity_score > 0:
+                    recommended_books_dict[vertex] = similarity_score + (self._ratings[vertex]/5 * (1/7)) #
+
+        recommended_books_list = [(recommended_books_dict[laptop_id], laptop_id) for laptop_id in recommended_books_dict]
+        recommended_books_list.sort(reverse=True)
+        recs = [i[1] for i in recommended_books_list[0:limit]]
+
+        return recs
+
+
+def load_laptop_graph(laptop_data_file: str) -> Graph:
+    """Return a book review graph corresponding to the given datasets.
+
+    The book review graph stores all the information from reviews_file as follows:
+    Create one vertex for each user, AND one vertex for each unique book reviewed in the datasets.
+    Edges represent a review between a user and a book (that is, you should add an edge between each user and
+    all the books that particular user has reviewed).
+
+    The vertices of the 'user' kind should have the user ID as its item.
+    The vertices of the 'book' kind representing each reviewed book should have the book TITLE as its item (you should
+    use the book_names_file to find the book title associated with each book id).
+
+    Use the "kind" _Vertex attribute to differentiate between the two vertex types.
+
+    Note: In this graph, each edge only represents the existence of a review---IGNORE THE REVIEW SCORE in the
+    datasets, as we don't have a way to represent these scores (yet).
+
+    Preconditions:
+        - reviews_file is the path to a CSV file corresponding to the book review data
+          format described on the assignment handout
+        - book_names_file is the path to a CSV file corresponding to the book data
+          format described on the assignment handout
+        - each book ID in reviews_file exists as a book ID in book_names_file
+
+    """
+    df = pd.read_csv(laptop_data_file)
+    df = df.drop(columns=['id'])
+    df = df.drop_duplicates()
+    df = df.dropna()
+
+    graph = Graph()
+
+    # with open(laptop_data_file, 'r') as file:
+    #     reader = csv.reader(file)
+    #     data = ['name', 'price', 'processor', 'ram', 'os', 'storage', 'display']
+    #     for row in reader:
+    #         id = row[0]
+    #         # rating = row[9]
+    #         # tmp = _Id(id, rating)
+    #         graph.add_vertex(id, 'id')
+    #         for i in range(len(data)):
+    #             j = row[i + 2]
+    #             graph.add_vertex(j, data[i])
+    #             graph.add_edge(id, j)
+
+    data = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
+    for index, row in df.iterrows():
+        # id = index
+        # rating = row[9]
+        # tmp = _Id(id, rating)
+        graph.add_vertex(index, 'id')
+        graph.add_rating(index, row['rating'])
+        for i in range(len(data)):
+            j = row[data[i]]
+            graph.add_vertex(j, data[i])
+            graph.add_edge(index, j)
+
+    return graph
