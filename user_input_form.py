@@ -15,7 +15,7 @@ bg_color = (30, 30, 30)
 questions = [
     'What is your ideal price for a laptop (CAD)?',
     'Does processor brand matter to you? (yes/no)',
-    'Which processor brand would you like? (Intel, AMD, Apple)', # if yes to prev ques
+    'Which processor brand would you like? (Intel, AMD, Apple)',  # if yes to prev ques
     'Which processing power would you like to have for the laptop? (Less/Medium/High)',
     'How much RAM(Random Access Memory) would you like to have? ()'
 ]
@@ -24,8 +24,10 @@ box_width = 200
 box_height = 50
 box_spacing = 50
 
+
 class InputBox:
     """Create an Input Box to gather user input"""
+
     def __init__(self, x, y, w, h, question):
         self.active = False
         self.rect = pygame.Rect(x, y, w, h)
@@ -75,7 +77,9 @@ def load_boxes():
             if event.type == pygame.QUIT:
                 run = False
             for box in input_boxes:
-                box.event_handler(event)
+                if event.type == pygame.MOUSEBUTTONDOWN or box.active:
+                    # INFO: Verifies whether it is to select a text box (box inactive) or is currently an active box
+                    box.event_handler(event)
 
         screen.fill(bg_color)
 
