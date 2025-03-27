@@ -8,6 +8,7 @@ from python_ta.contracts import check_contracts
 from dataclasses import dataclass
 import pandas as pd
 
+
 # class _Id:
 #     """Holds data, containing id and rating"""
 #     id: int
@@ -75,7 +76,7 @@ class Graph:
         self._vertices = {}
         self._ratings = {}
 
-    def add_vertex(self, item: Any, type: str) -> None:
+    def add_vertex(self, item: Any, type_: str) -> None:
         """Add a vertex with the given item and kind to this graph.
 
         The new vertex is not adjacent to any other vertices.
@@ -85,7 +86,7 @@ class Graph:
             - kind in {'user', 'book'}
         """
         if item not in self._vertices:
-            self._vertices[item] = _Vertex(item, type)
+            self._vertices[item] = _Vertex(item, type_)
 
     def add_edge(self, item1: Any, item2: Any) -> None:
         """Add an edge between the two vertices with the given items in this graph.
@@ -104,9 +105,9 @@ class Graph:
         else:
             raise ValueError
 
-    def add_rating(self, id: int, rating: float) -> None:
+    def add_rating(self, id_: int, rating: float) -> None:
         """Adds a rating to the graph"""
-        self._ratings[id] = rating
+        self._ratings[id_] = rating
 
     def get_neighbours(self, item: Any) -> dict:
         """Return a set of the neighbours of the given item.
@@ -155,9 +156,10 @@ class Graph:
             if vertex != specs and vertex_obj.kind == 'id':
                 similarity_score = self.get_similarity_score(specs, vertex)
                 if similarity_score > 0:
-                    recommended_books_dict[vertex] = similarity_score + (self._ratings[vertex]/5 * (1/7)) #
+                    recommended_books_dict[vertex] = similarity_score + (self._ratings[vertex] / 5 * (1 / 7))  #
 
-        recommended_books_list = [(recommended_books_dict[laptop_id], laptop_id) for laptop_id in recommended_books_dict]
+        recommended_books_list = [(recommended_books_dict[laptop_id], laptop_id) for laptop_id in
+                                  recommended_books_dict]
         recommended_books_list.sort(reverse=True)
         recs = [i[1] for i in recommended_books_list[0:limit]]
 
