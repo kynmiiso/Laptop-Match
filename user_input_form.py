@@ -60,6 +60,27 @@ class InputBox:
         screen.blit(text_surface, (self.rect.x + 10, self.rect.y + 10))
 
 
+class SpecData:
+    """ Class for submit button
+    """
+
+    # TODO needs fixing
+    def __init__(self, x, y, w, h, question):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = color_inactive
+        self.specs = []  # will include final data
+
+    def event_handler(self, event):
+        """Handles the events occurring in the main loop"""
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pass
+            # TODO Collect specs from input boxes and send over data to main function
+
+    def draw_box(self):
+        """Draws the input box and text"""
+
+
 def load_boxes():
     """Loads text input boxes to get user input about specs for laptop.
     """
