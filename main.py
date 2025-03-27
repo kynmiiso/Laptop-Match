@@ -52,6 +52,8 @@ class _Vertex:
         If this vertex has the same item as another vertex, and they are both of the same kind,
         """
 
+        # TODO (Consideration) what if we mimic Ex 4 in terms of using weighted graphs
+
         if len(self.neighbours) == 0 or len(other.neighbours) == 0:
             return 0
 
