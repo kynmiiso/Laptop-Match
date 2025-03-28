@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import csv
 from typing import Any, Optional
 from python_ta.contracts import check_contracts
 from dataclasses import dataclass
 import pandas as pd
+
+from user_input_form import load_boxes
 
 
 class _Vertex:
@@ -51,8 +52,22 @@ class _Vertex:
         if len(self.neighbours) == 0 or len(other.neighbours) == 0:
             return 0
 
-        numerator = len(self.neighbours.intersection(other.neighbours))
-        denominator = len(self.neighbours.union(other.neighbours))
+        # temporary fix lol
+        s_neighbor_no_price = self.neighbours.copy()
+        s_price = [v for v in self.neighbours if v.kind == "price(in Rs.)"][0]
+        s_neighbor_no_price.remove(s_price)
+
+        o_neighbor_no_price = other.neighbours.copy()
+        o_price = [v for v in other.neighbours if v.kind == "price(in Rs.)"][0]
+        o_neighbor_no_price.remove(o_price)
+
+        # Non price similarity score
+        numerator = len(s_neighbor_no_price.intersection(o_neighbor_no_price))
+        denominator = len(s_neighbor_no_price.union(o_neighbor_no_price))
+
+        # Price similarity score
+        price_tolerance = 100
+        sim_score_price = abs(s_price.item - o_price.item)
 
         return numerator / denominator
 
@@ -143,14 +158,14 @@ class Graph:
             v2 = self._vertices[item2]
             return v1.similarity_score(v2)
 
-    def recommended_laptops(self, specs: int, limit: int):
+    def recommended_laptops(self, specs_: int, limit: int):
         """Get recommended laptops"""
         recommended_books_dict = {}
 
         for vertex in self._vertices:
             vertex_obj = self._vertices[vertex]
-            if vertex != specs and vertex_obj.kind == 'id':
-                similarity_score = self.get_similarity_score(specs, vertex)
+            if vertex != specs_ and vertex_obj.kind == 'id':
+                similarity_score = self.get_similarity_score(specs_, vertex)
                 if similarity_score > 0:
                     recommended_books_dict[vertex] = similarity_score + (self._ratings[vertex] / 5 * (1 / 7))  #
 
@@ -162,22 +177,30 @@ class Graph:
         return recs
 
 
+def _get_processor(processor: str) -> tuple[str, str]:
+    """fiukhdsjkfhdsf"""
+    processing_power_dict = {"low": ["i3"],
+                             "medium": ["i5"],
+                             "high": ["i7", "i9"]}
+
+    if "amd" in processor.lower():
+        brand = "amd"
+    elif "apple" in processor.lower():
+        brand = "apple"
+    else:
+        brand = "intel"
+
+    proc_pwr = "medium"
+    for k in processing_power_dict.keys():
+        if any(i in processor.lower() for i in processing_power_dict[k]):
+            proc_pwr = k
+            break
+
+    return brand, proc_pwr
+
+
 def load_laptop_graph(laptop_data_file: str) -> Graph:
     """Return a book review graph corresponding to the given datasets.
-
-    The book review graph stores all the information from reviews_file as follows:
-    Create one vertex for each user, AND one vertex for each unique book reviewed in the datasets.
-    Edges represent a review between a user and a book (that is, you should add an edge between each user and
-    all the books that particular user has reviewed).
-
-    The vertices of the 'user' kind should have the user ID as its item.
-    The vertices of the 'book' kind representing each reviewed book should have the book TITLE as its item (you should
-    use the book_names_file to find the book title associated with each book id).
-
-    Use the "kind" _Vertex attribute to differentiate between the two vertex types.
-
-    Note: In this graph, each edge only represents the existence of a review---IGNORE THE REVIEW SCORE in the
-    datasets, as we don't have a way to represent these scores (yet).
 
     Preconditions:
         - reviews_file is the path to a CSV file corresponding to the book review data
@@ -210,16 +233,62 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     #             graph.add_vertex(j, data[i])
     #             graph.add_edge(id, j)
 
-    data = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
+    # data = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
+    data_ = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
     for index, row in df.iterrows():
         # id = index
         # rating = row[9]
         # tmp = _Id(id, rating)
         graph.add_vertex(index, 'id')
         graph.add_rating(index, row['rating'])
-        for i in range(len(data)):
-            j = row[data[i]]
-            graph.add_vertex(j, data[i])
-            graph.add_edge(index, j)
+        for i in range(len(data_)):
+            j = row[data_[i]]
+
+            if i == 2:  # (if currently assessing processor)
+                brand, proc_pwr = _get_processor(j)
+                graph.add_vertex(brand, "processor")
+                graph.add_vertex(proc_pwr, "processing power")
+                graph.add_edge(index, brand)
+                graph.add_edge(index, proc_pwr)
+            else:
+                graph.add_vertex(j, data_[i])
+                graph.add_edge(index, j)
 
     return graph
+
+
+if __name__ == "__main__":
+    g = load_laptop_graph("laptops.csv")
+    data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
+
+    specs = load_boxes()
+
+    g.add_vertex(-1, 'id')  # TODO: BE ABLE TO CHANGE THE ID MAYBE
+    tot_price = 0
+    diff = 0
+
+    if specs is not None:
+        for ques, ans in specs.items():
+            print(f"{ques}: {ans}")
+
+            val = None
+
+            # create price vertex
+            if ques == 0:
+                tot_price += float(ans)
+                continue
+            elif ques == 1:
+                tot_price += float(ans)
+                val = tot_price/2
+                diff = float(ans) - val
+                g.add_vertex(val, 'price(in Rs.)')
+                # for similarity score, we get range which is mean_price +- diff
+            # other
+            else:
+                val = data[ques]
+                g.add_vertex(ans, val)
+
+            g.add_edge(-1, val)
+
+    else:
+        print("Form was closed without submission.")
