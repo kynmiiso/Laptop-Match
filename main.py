@@ -9,7 +9,6 @@ from dataclasses import dataclass
 import pandas as pd
 
 
-
 class _Vertex:
     """A vertex in a laptop recommendation graph, used to represent the laptop's specs, including 'name', 'price',
     'processor', 'ram', 'os', 'storage', 'display (inches)', 'rating' represented by strings.

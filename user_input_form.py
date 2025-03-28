@@ -1,3 +1,9 @@
+"""
+CSC111 Project 2 User Input Form
+
+Form to gather information from user about an ideal laptop, in order to inject as a vertex in the graph for comparison
+"""
+
 import pygame
 import sys
 
@@ -28,7 +34,7 @@ box_spacing = 100
 
 
 class InputBox:
-    """Create an Input Box to gather user input"""
+    """Create an Input Box to gather user input."""
     def __init__(self, x, y, w, h, question):
         self.active = False
         self.rect = pygame.Rect(x, y, w, h)
@@ -63,25 +69,32 @@ class InputBox:
         screen.blit(text_surface, (self.rect.x + 10, self.rect.y + 10))
 
 
-class SpecData:
+class SubmitButton:
     """ Class for submit button
     """
 
-    # TODO needs fixing
-    def __init__(self, x, y, w, h, question):
+    def __init__(self, x, y, w, h, button_text):
         self.rect = pygame.Rect(x, y, w, h)
         self.color = color_inactive
         self.specs = []  # will include final data
+        self.button_text = button_text
 
-    def event_handler(self, event):
+    def event_handler(self, event, input_boxes: list):
         """Handles the events occurring in the main loop"""
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            pass
-            # TODO Collect specs from input boxes and send over data to main function
+        if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            specs = {}
+            for i, box in enumerate(input_boxes):
+                specs[questions[i]] = box.text
+            return specs
+        return None
 
     def draw_box(self):
         """Draws the input box and text"""
+        pygame.draw.rect(screen, self.color, self.rect)
+        text_surface = font.render("Submit", True, white)
+        text_rect = text_surface.get_rect(center=self.rect.center)
+        screen.blit(text_surface, text_rect)
 
 
 def load_boxes():
@@ -94,7 +107,10 @@ def load_boxes():
         y = 100 + i * box_spacing
         input_boxes.append(InputBox(x, y, box_width, box_height, question))
 
+    submit_button = SubmitButton(800, 700, box_width, box_height, "Submit")
+
     run = True
+    user_specs = None
     # main loop
     while run:
         for event in pygame.event.get():
@@ -105,17 +121,26 @@ def load_boxes():
                     # INFO: Verifies whether it is to select a text box (box inactive) or is currently an active box
                     box.event_handler(event)
 
+            specs = submit_button.event_handler(event, input_boxes)
+            if specs:
+                user_specs = specs
+                run = False
+
         screen.fill(bg_color)
 
         for box in input_boxes:
             box.draw_box()
 
+        submit_button.draw_box()
+
         pygame.display.flip()
         clock.tick(60)
 
     pygame.quit()
-    sys.exit()
+    return user_specs
 
 
 if __name__ == "__main__":
-    load_boxes()
+    specs = load_boxes()
+    for ques, ans in specs.items():
+        print(f"{ques}: {ans}")
