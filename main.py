@@ -8,9 +8,9 @@ from python_ta.contracts import check_contracts
 from dataclasses import dataclass
 import pandas as pd
 
-from output_display import output_function
-from user_input_form import load_boxes
-
+# from output_display import output_function
+# from user_input_form import load_boxes
+import user_input_form
 
 class _Vertex:
     """A vertex in a laptop recommendation graph, used to represent the laptop's specs, including 'name', 'price',
@@ -281,29 +281,29 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     #             graph.add_edge(id, j)
 
     # data = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
-    # data_ = _load_data("")
-    data_ = {  # is incomplete; will be replaced by json file
-        'name': {},
-        'price(in Rs.)': {},
-        'processor': {
-            'Intel': {"low": ["i3"],
-                      "medium": ["i5"],
-                      "high": ["i7", "i9"]},
-            'AMD': {"low": []}
-        },
-        'ram': {
-            '8 GB', '16GB'
-        },
-        'os': {
-            'Windows', 'Mac', 'Chrome'
-        },
-        'storage': {
-            '512 GB', '256 GB'
-        },
-        'display(in inch)': {
-
-        }
-    }
+    data_ = _load_data('parameters_data.json')
+    # data_ = {  # is incomplete; will be replaced by json file
+    #     'name': {},
+    #     'price(in Rs.)': {},
+    #     'processor': {
+    #         'Intel': {"low": ["i3"],
+    #                   "medium": ["i5"],
+    #                   "high": ["i7", "i9"]},
+    #         'AMD': {"low": []}
+    #     },
+    #     'ram': {
+    #         '8 GB', '16GB'
+    #     },
+    #     'os': {
+    #         'Windows', 'Mac', 'Chrome'
+    #     },
+    #     'storage': {
+    #         '512 GB', '256 GB'
+    #     },
+    #     'display(in inch)': {
+    #
+    #     }
+    # }
     for index, row in df.iterrows():
         # id = index
         # rating = row[9]
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     g = load_laptop_graph("laptops.csv")
     data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
 
-    specs = load_boxes()
+    specs = user_input_form.load_boxes()
 
     g.add_vertex(-1, 'id')  # TODO: BE ABLE TO CHANGE THE ID MAYBE
     tot_price = 0
@@ -378,7 +378,8 @@ if __name__ == "__main__":
         op = g.recommended_laptops(-1, 10, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
         # TODO: forward to output screen
 
-        output_function(op, g)
+        print(op)
+        # output_function(op, g)
 
     else:
         print("Form was closed without submission.")
