@@ -191,6 +191,9 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     df = df.drop(columns=['id'])
     df = df.drop_duplicates()
     df = df.dropna()
+    exchange_rate = 0.016  # INR to CAD
+    df['price(in Rs.)'] = round(df['price(in Rs.)'] * exchange_rate)
+    # print(df)
 
     graph = Graph()
 
