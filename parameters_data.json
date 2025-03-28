@@ -2,15 +2,15 @@
 "name": {},
 "price(in Rs.)": {},
 "processor": {
-    "Intel": {"low": ["i3", "Celeron"],
-              "medium": ["i5", "Pentium"],
-              "high": ["i7", "i9"]},
-    "AMD": {"low": ["Athlon", "Ryzen 3"],
-            "medium": ["Ryzen 5"],
-            "high": ["Ryzen 7", "Ryzen 9"]},
-    "Apple": {"low": [],
-              "medium": ["M1", "M2"],
-              "high": []}
+    "Intel": {"Low": ["i3", "Celeron"],
+              "Medium": ["i5", "Pentium"],
+              "High": ["i7", "i9"]},
+    "AMD": {"Low": ["Athlon", "Ryzen 3"],
+            "Medium": ["Ryzen 5"],
+            "High": ["Ryzen 7", "Ryzen 9"]},
+    "Apple": {"Low": [],
+              "Medium": ["M1", "M2"],
+              "High": []}
 },
 "ram": {
     "8 GB": {},
