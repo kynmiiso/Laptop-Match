@@ -9,11 +9,6 @@ from dataclasses import dataclass
 import pandas as pd
 
 
-# class _Id:
-#     """Holds data, containing id and rating"""
-#     id: int
-#     rating: float
-
 
 class _Vertex:
     """A vertex in a laptop recommendation graph, used to represent the laptop's specs, including 'name', 'price',

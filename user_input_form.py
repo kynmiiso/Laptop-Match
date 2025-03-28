@@ -14,20 +14,21 @@ bg_color = (30, 30, 30)
 
 questions = [
     'What is your ideal price for a laptop (CAD)?',
-    'Does processor brand matter to you? (yes/no)',
-    'Which processor brand would you like? (Intel, AMD, Apple)',  # if yes to prev ques
+    'Does processor brand matter to you, and if so which would you like to have? (Intel/AMD/Apple/No)',
     'Which processing power would you like to have for the laptop? (Less/Medium/High)',
-    'How much RAM(Random Access Memory) would you like to have? ()'
+    'How much RAM(Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
+    'What Operating System would you like to have? (Mac/Windows)',
+    'How much storage(SSD) would you like to have? (128 GB/256 GB/512 GB/1 TB/2 TB)'
+    'What display size would you like to have? ()'
 ]
 
 box_width = 200
 box_height = 50
-box_spacing = 50
+box_spacing = 100
 
 
 class InputBox:
     """Create an Input Box to gather user input"""
-
     def __init__(self, x, y, w, h, question):
         self.active = False
         self.rect = pygame.Rect(x, y, w, h)
@@ -45,16 +46,18 @@ class InputBox:
             else:
                 self.color = color_inactive
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                self.text = self.text[:-1]
-            else:
-                self.text += event.unicode
+        if self.active:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    self.text += event.unicode
 
     def draw_box(self):
         """Draws the input box and text"""
         question_surf = font.render(self.question, True, white)
-        screen.blit(question_surf, (self.rect.x, self.rect.y))
+        screen.blit(question_surf, (self.rect.x, self.rect.y - 20))
+
         pygame.draw.rect(screen, self.color, self.rect, 5)
         text_surface = font.render(self.text, True, white)
         screen.blit(text_surface, (self.rect.x + 10, self.rect.y + 10))
