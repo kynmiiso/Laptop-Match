@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, Optional
 from python_ta.contracts import check_contracts
 from dataclasses import dataclass
@@ -237,6 +238,14 @@ def _convert_val(s: str, mapping: dict):
     return itm
 
 
+def _load_data(filename: str) -> dict:
+    """Load minigames from a JSON file with the given filename."""
+    with open(filename, 'r') as f:
+        grouped_data = json.load(f)
+
+    return grouped_data
+
+
 def load_laptop_graph(laptop_data_file: str) -> Graph:
     """Return a book review graph corresponding to the given datasets.
 
@@ -272,6 +281,7 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     #             graph.add_edge(id, j)
 
     # data = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
+    # data_ = _load_data("")
     data_ = {  # is incomplete; will be replaced by json file
         'name': {},
         'price(in Rs.)': {},
