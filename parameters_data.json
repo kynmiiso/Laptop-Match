@@ -1,0 +1,31 @@
+{
+"name": {},
+"price(in Rs.)": {},
+"processor": {
+    "Intel": {"low": ["i3", "Celeron"],
+              "medium": ["i5", "Pentium"],
+              "high": ["i7", "i9"]},
+    "AMD": {"low": ["Athlon", "Ryzen 3"],
+            "medium": ["Ryzen 5"],
+            "high": ["Ryzen 7", "Ryzen 9"]},
+    "Apple": {"medium": ["M1", "M2"]}
+},
+"ram": {
+    "8 GB": {},
+    "16 GB": {},
+    "32 GB": {}
+},
+"os": {
+    "Windows": {},
+    "Mac": {},
+    "Chrome": {}
+},
+"storage": {
+    "128 GB": {},
+    "256 GB": {},
+    "512 GB": {},
+    "1 TB": {},
+    "2 TB": {}
+},
+"display(in inch)": {}
+}
