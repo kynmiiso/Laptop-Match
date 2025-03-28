@@ -23,7 +23,7 @@ questions = [
     'Which processor would you like to have? (Intel/AMD/Apple)',
     'Which processing power would you like to have for the laptop? (Less/Medium/High)',
     'How much RAM (Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
-    'What Operating System would you like to have? (Mac/Windows)',
+    'What Operating System would you like to have? (Mac/Windows/Chrome)',
     'How much storage (SSD) would you like to have? (128 GB/256 GB/512 GB/1 TB/2 TB)',
     'What display size (in inches) would you like to have? (12/13/14/15/16/17)'
 ]
