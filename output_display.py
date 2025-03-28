@@ -17,3 +17,11 @@ TODO:
 -   Back to form button
 
 """
+from main import Graph
+
+
+def output_function(recommendations: list, graph: Graph):
+    """
+    die
+    """
+    pass
