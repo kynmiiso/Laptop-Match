@@ -158,21 +158,20 @@ class Graph:
             v2 = self._vertices[item2]
             return v1.similarity_score(v2)
 
-    def recommended_laptops(self, specs_: int, limit: int):
+    def recommended_laptops(self, specs: int, limit: int):
         """Get recommended laptops"""
-        recommended_books_dict = {}
+        recommended_dict = {}
 
         for vertex in self._vertices:
             vertex_obj = self._vertices[vertex]
-            if vertex != specs_ and vertex_obj.kind == 'id':
-                similarity_score = self.get_similarity_score(specs_, vertex)
+            if vertex != specs and vertex_obj.kind == 'id':
+                similarity_score = self.get_similarity_score(specs, vertex)
                 if similarity_score > 0:
-                    recommended_books_dict[vertex] = similarity_score + (self._ratings[vertex] / 5 * (1 / 7))  #
+                    recommended_dict[vertex] = similarity_score + (self._ratings[vertex] / 5 * (1 / 7))  #
 
-        recommended_books_list = [(recommended_books_dict[laptop_id], laptop_id) for laptop_id in
-                                  recommended_books_dict]
-        recommended_books_list.sort(reverse=True)
-        recs = [i[1] for i in recommended_books_list[0:limit]]
+        recommended_list = [(recommended_dict[laptop_id], laptop_id) for laptop_id in recommended_dict]
+        recommended_list.sort(reverse=True)
+        recs = [i[1] for i in recommended_list[0:limit]]
 
         return recs
 

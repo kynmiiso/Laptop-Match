@@ -18,17 +18,18 @@ white = (255, 255, 255)
 bg_color = (30, 30, 30)
 
 questions = [
-    'What is your ideal price for a laptop (CAD)?',
-    'Does processor brand matter to you, and if so which would you like to have? (Intel/AMD/Apple/No)',
+    'What is your budget for a laptop(CAD)?',
+    'What is your maximum price for a laptop (CAD)?',
+    'Which processor would you like to have? (Intel/AMD/Apple)',
     'Which processing power would you like to have for the laptop? (Less/Medium/High)',
     'How much RAM (Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
     'What Operating System would you like to have? (Mac/Windows)',
     'How much storage (SSD) would you like to have? (128 GB/256 GB/512 GB/1 TB/2 TB)',
-    'What display size (in inches) would you like to have? (12/13/14/15/16/17)',
-    'What average value for customer ratings would be ideal for the laptop? (Any number from 3.0 to 5.0)'
+    'What display size (in inches) would you like to have? (12/13/14/15/16/17)'
 ]
 
 valid_options = [
+    None,
     None,  # can be any price
     ['Intel', 'AMD', 'Apple', 'No'],
     ['Less', 'Medium', 'High'],
@@ -36,8 +37,6 @@ valid_options = [
     ['Mac', 'Windows'],
     ['128 GB', '256 GB', '512 GB', '1 TB', '2 TB'],
     ['12', '13', '14', '15', '16', '17'],  # remove the 35-inch laptop in dataset since it's not real
-    (3.0, 5.0)  # any number from range 3.0 to 5.0 (there are no ratings below that in dataset)
-    # (except there's 1 with 1.6 fsr, fix later)
 ]
 
 box_width = 200
@@ -47,13 +46,13 @@ box_spacing = 100
 
 class InputBox:
     """Create an Input Box to gather user input."""
-    def __init__(self, x, y, w, h, question, valid_options):
+    def __init__(self, x, y, w, h, question, valid_opt):
         self.active = False
         self.rect = pygame.Rect(x, y, w, h)
         self.color = color_inactive
         self.text = ''
         self.question = question
-        self.valid_options = valid_options
+        self.valid_options = valid_opt
 
     def event_handler(self, event):
         """Handles the events occurring in the main loop"""
@@ -89,10 +88,6 @@ class InputBox:
         if self.valid_options is None:  # for price
             return True
 
-        if isinstance(self.valid_options, tuple):  # for rating
-            value = float(self.text)
-            return self.valid_options[0] <= value <= self.valid_options[1]
-
         return self.text in self.valid_options
 
 
@@ -111,6 +106,8 @@ class SubmitButton:
 
         if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
             for box in input_boxes:
+                if box[0].text > box[1].text:
+                    return None
                 if not box.check_validity():
                     return None
             for i, box in enumerate(input_boxes):
@@ -162,6 +159,9 @@ def load_boxes():
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid = True
                 for box in input_boxes:
+                    if int(input_boxes[0].text) > int(input_boxes[1].text):
+                        all_valid = False
+                        error_message = "Budget cannot be more than max price!"
                     if not box.check_validity():
                         all_valid = False
                         error_message = "Please enter a valid input from the options in brackets."
@@ -170,11 +170,11 @@ def load_boxes():
                     user_specs = {}
                     for i, box in enumerate(input_boxes):
                         if valid_options[i] is None:
-                            user_specs[questions[i]] = float(box.text)
+                            user_specs[i] = float(box.text)
                         elif isinstance(valid_options[i], tuple):
-                            user_specs[questions[i]] = float(box.text)
+                            user_specs[i] = float(box.text)
                         else:
-                            user_specs[questions[i]] = box.text
+                            user_specs[i] = box.text
                     run = False
                 else:
                     show_error = True
