@@ -198,6 +198,26 @@ def _get_processor(processor: str) -> tuple[str, str]:
     return brand, proc_pwr
 
 
+def _get_split_data(s: str, mapping: dict):
+    """
+    s: string data
+    mapping: conditions thing; maps from broad category to specifics (e.g. {"Intel": {"low": ["i3"], "medium": ["i5"]}}
+    """
+    broad = None
+    for general_k in mapping.keys():
+        broad = general_k
+        if general_k in s.lower():
+            break
+
+    specific = None
+    for specific_k in mapping[broad]:
+        specific = specific_k
+        if any(i in s.lower() for i in mapping[broad][specific_k]):
+            break
+
+    return broad, specific
+
+
 def load_laptop_graph(laptop_data_file: str) -> Graph:
     """Return a book review graph corresponding to the given datasets.
 
@@ -233,25 +253,50 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     #             graph.add_edge(id, j)
 
     # data = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
-    data_ = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
+    data_ = {  # is incomplete
+        'name': {},
+        'price(in Rs.)': {},
+        'processor': {
+            'Intel': {"low": ["i3"],
+                      "medium": ["i5"],
+                      "high": ["i7", "i9"]},
+            'AMD': {"low": []}
+        },
+        'ram': {
+            '8 GB': {},
+            '16 GB': {}
+        },
+        'os': {
+            'Windows', 'Mac'
+        },
+        'storage': {
+
+        },
+        'display(in inch)': {
+
+        }
+    }
     for index, row in df.iterrows():
         # id = index
         # rating = row[9]
         # tmp = _Id(id, rating)
         graph.add_vertex(index, 'id')
         graph.add_rating(index, row['rating'])
-        for i in range(len(data_)):
-            j = row[data_[i]]
+        # for i in range(len(data_)):
+        #     j = row[data_[i]]
+        #
+        #     if i == 2:  # (if currently assessing processor)
+        #         brand, proc_pwr = _get_processor(j)
+        #         graph.add_vertex(brand, "processor")
+        #         graph.add_vertex(proc_pwr, "processing power")
+        #         graph.add_edge(index, brand)
+        #         graph.add_edge(index, proc_pwr)
+        #     else:
+        #         graph.add_vertex(j, data_[i])
+        #         graph.add_edge(index, j)
 
-            if i == 2:  # (if currently assessing processor)
-                brand, proc_pwr = _get_processor(j)
-                graph.add_vertex(brand, "processor")
-                graph.add_vertex(proc_pwr, "processing power")
-                graph.add_edge(index, brand)
-                graph.add_edge(index, proc_pwr)
-            else:
-                graph.add_vertex(j, data_[i])
-                graph.add_edge(index, j)
+        for k in data_:
+            if k in ["processor", "ram", ]
 
     return graph
 
@@ -278,7 +323,7 @@ if __name__ == "__main__":
                 continue
             elif ques == 1:
                 tot_price += float(ans)
-                val = tot_price/2
+                val = tot_price / 2
                 diff = float(ans) - val
                 g.add_vertex(val, 'price(in Rs.)')
                 # for similarity score, we get range which is mean_price +- diff
