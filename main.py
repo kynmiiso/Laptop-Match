@@ -7,6 +7,7 @@ from python_ta.contracts import check_contracts
 from dataclasses import dataclass
 import pandas as pd
 
+from output_display import output_function
 from user_input_form import load_boxes
 
 
@@ -42,7 +43,7 @@ class _Vertex:
         self.kind = kind
         self.neighbours = set()
 
-    def similarity_score(self, other: _Vertex) -> float:
+    def similarity_score(self, other: _Vertex, price_tolerance: float = 100.0) -> float:
         """Return the similarity score between this vertex and other.
         If this vertex has the same item as another vertex, and they are both of the same kind,
         """
@@ -66,10 +67,12 @@ class _Vertex:
         denominator = len(s_neighbor_no_price.union(o_neighbor_no_price))
 
         # Price similarity score
-        price_tolerance = 100
-        sim_score_price = abs(s_price.item - o_price.item)
+        # min_range = s_price.item - price_tolerance
+        # max_range = s_price.item + price_tolerance
+        sim_score_price = int(abs(s_price.item - o_price.item) <= price_tolerance)
+        # check whether the price falls between the range min_range to max_range
 
-        return numerator / denominator
+        return numerator / denominator + (sim_score_price * (1 / 8))  # weight for the price is 1/8
 
 
 class Graph:
@@ -133,7 +136,7 @@ class Graph:
         else:
             raise ValueError
 
-    def get_similarity_score(self, item1: Any, item2: Any) -> float:
+    def get_similarity_score(self, item1: Any, item2: Any, price_tolerance: float = 100.0) -> float:
         """Return the similarity score between the two given items in this graph.
 
         Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
@@ -156,18 +159,18 @@ class Graph:
         else:
             v1 = self._vertices[item1]
             v2 = self._vertices[item2]
-            return v1.similarity_score(v2)
+            return v1.similarity_score(v2, price_tolerance)
 
-    def recommended_laptops(self, specs: int, limit: int):
+    def recommended_laptops(self, specs_: int, limit: int, price_tolerance: float) -> list:
         """Get recommended laptops"""
         recommended_dict = {}
 
         for vertex in self._vertices:
             vertex_obj = self._vertices[vertex]
-            if vertex != specs and vertex_obj.kind == 'id':
-                similarity_score = self.get_similarity_score(specs, vertex)
+            if vertex != specs_ and vertex_obj.kind == 'id':
+                similarity_score = self.get_similarity_score(specs_, vertex, price_tolerance)
                 if similarity_score > 0:
-                    recommended_dict[vertex] = similarity_score + (self._ratings[vertex] / 5 * (1 / 7))  #
+                    recommended_dict[vertex] = similarity_score + (self._ratings[vertex] / 5 * (1 / 8))
 
         recommended_list = [(recommended_dict[laptop_id], laptop_id) for laptop_id in recommended_dict]
         recommended_list.sort(reverse=True)
@@ -176,29 +179,29 @@ class Graph:
         return recs
 
 
-def _get_processor(processor: str) -> tuple[str, str]:
-    """fiukhdsjkfhdsf"""
-    processing_power_dict = {"low": ["i3"],
-                             "medium": ["i5"],
-                             "high": ["i7", "i9"]}
+# def _get_processor(processor: str) -> tuple[str, str]:
+#     """fiukhdsjkfhdsf"""
+#     processing_power_dict = {"low": ["i3"],
+#                              "medium": ["i5"],
+#                              "high": ["i7", "i9"]}
+#
+#     if "amd" in processor.lower():
+#         brand = "amd"
+#     elif "apple" in processor.lower():
+#         brand = "apple"
+#     else:
+#         brand = "intel"
+#
+#     proc_pwr = "medium"
+#     for k in processing_power_dict.keys():
+#         if any(i in processor.lower() for i in processing_power_dict[k]):
+#             proc_pwr = k
+#             break
+#
+#     return brand, proc_pwr
 
-    if "amd" in processor.lower():
-        brand = "amd"
-    elif "apple" in processor.lower():
-        brand = "apple"
-    else:
-        brand = "intel"
 
-    proc_pwr = "medium"
-    for k in processing_power_dict.keys():
-        if any(i in processor.lower() for i in processing_power_dict[k]):
-            proc_pwr = k
-            break
-
-    return brand, proc_pwr
-
-
-def _get_split_data(s: str, mapping: dict):
+def _convert_split(s: str, mapping: dict):
     """
     s: string data
     mapping: conditions thing; maps from broad category to specifics (e.g. {"Intel": {"low": ["i3"], "medium": ["i5"]}}
@@ -206,16 +209,32 @@ def _get_split_data(s: str, mapping: dict):
     broad = None
     for general_k in mapping.keys():
         broad = general_k
-        if general_k in s.lower():
+        if general_k.lower() in s.lower():
             break
 
     specific = None
     for specific_k in mapping[broad]:
         specific = specific_k
-        if any(i in s.lower() for i in mapping[broad][specific_k]):
+        if any(i.lower() in s.lower() for i in mapping[broad][specific_k]):
             break
 
     return broad, specific
+
+
+def _convert_val(s: str, mapping: dict):
+    """
+    s: string data
+    mapping: mapping from output key to string in data or blank
+    """
+    itm = None
+    for k in mapping:
+        itm = k
+        # if k.lower() in s.lower():
+        if k.lower() in s.lower() or any(i.lower() in s.lower() for i in mapping[k]):
+            # safety net if specific keyword is not found in s but s is still under category k
+            return k
+
+    return itm
 
 
 def load_laptop_graph(laptop_data_file: str) -> Graph:
@@ -253,7 +272,7 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     #             graph.add_edge(id, j)
 
     # data = ['name', 'price(in Rs.)', 'processor', 'ram', 'os', 'storage', 'display(in inch)']
-    data_ = {  # is incomplete
+    data_ = {  # is incomplete; will be replaced by json file
         'name': {},
         'price(in Rs.)': {},
         'processor': {
@@ -263,14 +282,13 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
             'AMD': {"low": []}
         },
         'ram': {
-            '8 GB': {},
-            '16 GB': {}
+            '8 GB', '16GB'
         },
         'os': {
-            'Windows', 'Mac'
+            'Windows', 'Mac', 'Chrome'
         },
         'storage': {
-
+            '512 GB', '256 GB'
         },
         'display(in inch)': {
 
@@ -296,7 +314,20 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
         #         graph.add_edge(index, j)
 
         for k in data_:
-            if k in ["processor", "ram", ]
+            j = row[k]
+            if k == "processor":
+                brand, proc_pwr = _convert_split(j, data_[k])
+                graph.add_vertex(brand, "processor")
+                graph.add_vertex(proc_pwr, "processing power")
+                graph.add_edge(index, brand)
+                graph.add_edge(index, proc_pwr)
+            elif k in ["ram", "os", "storage"]:
+                val_ = _convert_val(j, data_[k])
+                graph.add_vertex(val_, k)
+                graph.add_edge(index, val_)
+            else:
+                graph.add_vertex(j, data_[k])
+                graph.add_edge(index, j)
 
     return graph
 
@@ -333,6 +364,11 @@ if __name__ == "__main__":
                 g.add_vertex(ans, val)
 
             g.add_edge(-1, val)
+
+        op = g.recommended_laptops(-1, 10, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
+        # TODO: forward to output screen
+
+        output_function(op, g)
 
     else:
         print("Form was closed without submission.")
