@@ -8,7 +8,9 @@
     "AMD": {"low": ["Athlon", "Ryzen 3"],
             "medium": ["Ryzen 5"],
             "high": ["Ryzen 7", "Ryzen 9"]},
-    "Apple": {"medium": ["M1", "M2"]}
+    "Apple": {"low": [],
+              "medium": ["M1", "M2"],
+              "high": []}
 },
 "ram": {
     "8 GB": {},
