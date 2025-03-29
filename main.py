@@ -5,12 +5,10 @@ from __future__ import annotations
 import json
 from typing import Any, Optional
 from python_ta.contracts import check_contracts
-from dataclasses import dataclass
 import pandas as pd
 
 # from output_display import output_function
-# from user_input_form import load_boxes
-import user_input_form
+# import user_input_form
 
 
 class _Vertex:
@@ -76,17 +74,18 @@ class Graph:
         self._vertices = {}
         self._ratings = {}
 
-    def add_vertex(self, item: Any, type_: str) -> None:
+    def add_vertex(self, item: Any, kind: str) -> None:
         """Add a vertex with the given item and kind to this graph.
 
         The new vertex is not adjacent to any other vertices.
         Do nothing if the given item is already in this graph.
 
         Preconditions:
-            - kind in {'user', 'book'}
+            - kind in {'name', 'price', 'processor', 'ram', 'os',
+        'storage', 'display size', 'rating'}
         """
         if item not in self._vertices:
-            self._vertices[(item, type_)] = _Vertex(item, type_)
+            self._vertices[(item, kind)] = _Vertex(item, kind)
 
     def add_edge(self, item1: tuple[Any, str], item2: tuple[Any, str]) -> None:
         """Add an edge between the two vertices with the given items in this graph.
@@ -133,7 +132,8 @@ class Graph:
 
         Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
         """
-
+        # print(f"{item1}: {item2}")
+        # print(f'{item1 in self._vertices}, {item2 in self._vertices}')
         if item1 not in self._vertices or item2 not in self._vertices:
             raise ValueError
         else:
@@ -142,8 +142,8 @@ class Graph:
             # print(f'{item1}: {v1.item}, {item2}: {v2.item}')
             sim_score = v1.similarity_score(v2, price_tolerance)
 
-            if sim_score >= 0.4:
-                print(f'{item1}: {v1.item}, {item2}: {v2.item}, sim_score: {sim_score}')
+            # if sim_score >= 0.4:
+            #     print(f'{item1}: {v1.item}, {item2}: {v2.item}, sim_score: {sim_score}')
 
             return sim_score
             # return v1.similarity_score(v2, price_tolerance)
@@ -161,9 +161,66 @@ class Graph:
 
         recommended_list = [(recommended_dict[laptop_id], laptop_id) for laptop_id in recommended_dict]
         recommended_list.sort(reverse=True)
-        recs = [i[1] for i in recommended_list[0:limit]]
+        recs = [i[1][0] for i in recommended_list[0:limit]]
 
         return recs
+
+    def id_to_rec(self, recs_ids: list, limit: int, img_links: dict) -> dict:
+        """Converts id list to recommendation data with image links."""
+        recommendations = {}
+
+        for i, laptop_id in enumerate(recs_ids[:limit]):
+            neighbors = self.get_neighbours(laptop_id, "id")
+
+            name = neighbors.get("name")
+
+            data = ["price(in Rs.)", "processor", "ram", "storage", "display(in inch)"]
+
+            recommendations[i] = {
+                'Name': name,
+                'Price': neighbors.get(data[0]),
+                'Processor': neighbors.get(data[1]),
+                'RAM': neighbors.get(data[2]),
+                'Storage': neighbors.get(data[3]),
+                'Display': neighbors.get(data[4]),
+                'Rating': self._ratings.get(laptop_id),
+                'Image': img_links.get(laptop_id)
+            }
+
+        return recommendations
+
+
+def add_dummy(g: Graph, specs_dict: dict):
+    """Inject dummy laptop into graph"""
+    data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
+
+    g.add_vertex(-1, 'id')
+    tot_price = 0
+    # diff = 0
+
+    if specs_dict is not None:
+        # limit_key = list(specs_dict)[8]
+        # limit = int(specs_dict[limit_key])
+        for ques, ans in specs_dict.items():
+            print(f"{ques}: {ans}")
+
+            # create price vertex
+            if ques == 0:
+                tot_price += float(ans)
+                continue
+            elif ques == 1:
+                tot_price += float(ans)
+                val = tot_price / 2
+                # diff = float(ans) - val
+                g.add_vertex(val, 'price(in Rs.)')
+                g.add_edge((-1, "id"), (val, 'price(in Rs.)'))
+                # for similarity score, we get range which is mean_price +- diff
+            elif 2 <= ques < len(data):
+                val = data[ques]
+                g.add_vertex(ans, val)
+                g.add_edge((-1, "id"), (ans, val))
+            else:
+                continue
 
 
 def _convert_split(s: str, mapping: dict):
@@ -219,7 +276,6 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
         - book_names_file is the path to a CSV file corresponding to the book data
           format described on the assignment handout
         - each book ID in reviews_file exists as a book ID in book_names_file
-
     """
     df = pd.read_csv(laptop_data_file)
     df = df.drop(columns=['id'])
@@ -259,49 +315,50 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
 
     return graph
 
-
-if __name__ == "__main__":
-    g = load_laptop_graph("laptops.csv")
-
-    laptop_16 = g.get_neighbours(16, "id")
-    print(laptop_16)
-
-    data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
-
-    specs = user_input_form.load_boxes()
-
-    g.add_vertex(-1, 'id')  # TODO: BE ABLE TO CHANGE THE ID MAYBE
-    tot_price = 0
-    diff = 0
-
-    if specs is not None:
-        for ques, ans in specs.items():
-            print(f"{ques}: {ans}")
-
-            val = None
-
-            # create price vertex
-            if ques == 0:
-                tot_price += float(ans)
-                continue
-            elif ques == 1:
-                tot_price += float(ans)
-                val = tot_price / 2
-                diff = float(ans) - val
-                g.add_vertex(val, 'price(in Rs.)')
-                g.add_edge((-1, "id"), (val, 'price(in Rs.)'))
-                # for similarity score, we get range which is mean_price +- diff
-            # other
-            else:
-                val = data[ques]
-                g.add_vertex(ans, val)
-                g.add_edge((-1, "id"), (ans, val))
-
-        op = g.recommended_laptops(-1, 10, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
-        # TODO: forward to output screen
-
-        print(op)
-        # output_function(op, g)
-
-    else:
-        print("Form was closed without submission.")
+#
+# if __name__ == "__main__":
+#     g = load_laptop_graph("laptops.csv")
+#
+#     laptop_16 = g.get_neighbours(16, "id")
+#     print(laptop_16)
+#
+#     data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
+#
+#     specs = user_input_form.load_boxes()
+#
+#     g.add_vertex(-1, 'id')  # TODO: BE ABLE TO CHANGE THE ID MAYBE
+#     tot_price = 0
+#     diff = 0
+#
+#     if specs is not None:
+#         for ques, ans in specs.items():
+#             print(f"{ques}: {ans}")
+#
+#             val = None
+#
+#             # create price vertex
+#             if ques == 0:
+#                 tot_price += float(ans)
+#                 continue
+#             elif ques == 1:
+#                 tot_price += float(ans)
+#                 val = tot_price / 2
+#                 diff = float(ans) - val
+#                 g.add_vertex(val, 'price(in Rs.)')
+#                 g.add_edge((-1, "id"), (val, 'price(in Rs.)'))
+#                 # for similarity score, we get range which is mean_price +- diff
+#             elif 2 <= ques < len(data):
+#                 val = data[ques]
+#                 g.add_vertex(ans, val)
+#                 g.add_edge((-1, "id"), (ans, val))
+#             else:
+#                 continue
+#
+#         op = g.recommended_laptops(-1, 10, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
+#         # TODO: forward to output screen
+#
+#         print(op)
+#         # output_function(op, g)
+#
+#     else:
+#         print("Form was closed without submission.")

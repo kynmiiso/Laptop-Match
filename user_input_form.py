@@ -5,6 +5,8 @@ Form to gather information from user about an ideal laptop and display recommend
 """
 
 import pygame
+from image_loader import load_image_links
+from main import load_laptop_graph, add_dummy
 
 pygame.init()
 
@@ -127,7 +129,7 @@ class Button:
 class DisplayRecommendations:
     """New screen to display final laptop recs.
     """
-    def __init__(self, recommendations: list):
+    def __init__(self, recommendations):
         self.recommendations = recommendations
         self.back_button = Button(400, 500, box_width, box_height, "Go Back to Form")
 
@@ -147,7 +149,7 @@ class DisplayRecommendations:
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return False
+                    running = False
 
                 if event.type == pygame.MOUSEBUTTONDOWN and self.back_button.rect.collidepoint(event.pos):
                     return True  # to go back to form
@@ -167,29 +169,28 @@ class DisplayRecommendations:
             primary_rect = pygame.Rect(200, 100, 1200, 300)
             pygame.draw.rect(screen, color_inactive, primary_rect, 2)
 
-            name = font.render(f"1. {primary_laptop['name']}", True, white)
+            name = font.render(f"{primary_laptop['Name']}", True, white)
             screen.blit(name, (220, 120))
 
             y_offset = 150
+
             for spec, value in primary_laptop.items():
-                if spec != 'name':
+                if spec != 'Name':
                     spec_text = font.render(f"{spec}: {value}", True, white)
                     screen.blit(spec_text, (220, y_offset))
                     y_offset += 25
 
-            for i, laptop in enumerate(self.recommendations[1:limit]):
-                if i + 1 >= limit:
-                    break
-                row = (i + 1) // 3
-                col = (i + 1) % 3
+            for i in range(1, limit):
+                for key in self.recommendations[i]:
+                    row = (int(i) + 1) // 3
+                    col = (int(i) + 1) % 3
 
-                x = x_start + col * (laptop_width + x_space)
-                y = y_start + row * (laptop_height + y_space)
+                    x = x_start + col * (laptop_width + x_space)
+                    y = y_start + row * (laptop_height + y_space)
 
-                pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
-
-                name = font.render(f"{laptop['name']}", True, white)
-                screen.blit(name, (x + 20, y + 20))
+                    pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
+                    name = font.render(f"{self.recommendations[i]['Name']}", True, white)
+                    screen.blit(name, (x + 20, y + 20))
 
             self.back_button.draw_box()
 
@@ -265,43 +266,24 @@ def load_boxes():
                         else:
                             user_specs[i] = box.text
                     if user_specs:
-                        temp_recs = [
-                            {
-                                'name': 'MacBook Pro 16"',
-                                'Price': 2499.99,
-                                'Processor': 'Apple M1 Pro',
-                                'RAM': '16 GB',
-                                'Storage': '512 GB',
-                                'Display': '16 inches'
-                            },
-                            {
-                                'name': 'Dell XPS 15',
-                                'Price': 1999.99,
-                                'Processor': 'Intel i7',
-                                'RAM': '16 GB',
-                                'Storage': '512 GB',
-                                'Display': '15.6 inches'
-                            },
-                            {
-                                'name': 'HP Spectre x360',
-                                'Price': 1499.99,
-                                'Processor': 'Intel i5',
-                                'RAM': '8 GB',
-                                'Storage': '256 GB',
-                                'Display': '13.5 inches'
-                            }
-                        ]
 
-                        key = list(user_specs)[-1]
-                        limit = int(user_specs[key])
+                        lim_key = list(user_specs)[8]
+                        lim = int(user_specs[lim_key])
+                        graph = load_laptop_graph('laptops.csv')
+                        price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
+                        dummy_laptop_id = -1
+                        add_dummy(graph, user_specs)
+                        recs_id_list = graph.recommended_laptops(dummy_laptop_id, lim, price_tolerence)
+                        img_links = load_image_links('laptops.csv')
+                        recs = graph.id_to_rec(recs_id_list, lim, img_links)
 
-                        if limit > 20:
-                            warning = font.render(
+                        if lim > 20:
+                            error_message = font.render(
                                 "Limit has exceeded maximum of 20 laptop recommendations! Please enter a number "
                                 "less than 20.", True, white)
-                            screen.blit(warning, (600, 30))
+                            show_error = True
 
-                        go_back = DisplayRecommendations(temp_recs).display_recs(limit)
+                        go_back = DisplayRecommendations(recs).display_recs(lim)
                         if not go_back:
                             continue
 
@@ -327,9 +309,17 @@ def load_boxes():
 
 
 if __name__ == "__main__":
+    g = load_laptop_graph("laptops.csv")
+
+    # op = g.recommended_laptops(-1, limit, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
+    # # TODO: forward to output screen
+    #
+    # print(op)
+    # # output_function(op, g)
+
     specs = load_boxes()
-    if specs is not None:
-        for ques, ans in specs.items():
-            print(f"{ques}: {ans}")
-    else:
-        print("Form was closed without submission.")
+
+    # if specs:
+    #     print(specs)
+    # else:
+    #     print("Form was closed without submission.")
