@@ -52,7 +52,7 @@ class _Vertex:
         numerator = len(s_neighbor_no_price.intersection(o_neighbor_no_price))
         denominator = len(s_neighbor_no_price.union(o_neighbor_no_price))
 
-        sim_score_price = int(abs(s_price.item - o_price.item) <= price_tolerance)
+        sim_score_price = int(abs(float(s_price.item) - float(o_price.item)) <= price_tolerance)
         # check whether the price falls between the range min_range to max_range
 
         return numerator / denominator + (sim_score_price * (1 / 8))  # weight for the price is 1/8
@@ -216,7 +216,7 @@ def add_dummy(g: Graph, specs_dict: dict):
                 g.add_edge((-1, "id"), (val, 'price(in Rs.)'))
                 # for similarity score, we get range which is mean_price +- diff
             elif 2 <= ques < len(data):
-                val = data[ques]
+                val = data[ques].lower().strip()
                 g.add_vertex(ans, val)
                 g.add_edge((-1, "id"), (ans, val))
             else:
@@ -298,7 +298,8 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
         graph.add_rating(index, row['rating'])
 
         for k in data_:
-            j = row[k]
+            # print(type(row[k]), row[k])
+            j = str(row[k]).lower().strip()
             if k == "processor":
                 brand, proc_pwr = _convert_split(j, data_[k])
                 graph.add_vertex(brand, "processor")
@@ -310,6 +311,8 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
                 graph.add_vertex(val_, k)
                 graph.add_edge((index, "id"), (val_, k))
             elif k in ['name', 'display(in inch)', 'price(in Rs.)']:
+                if k == 'display(in inch)':
+                    j = str(int(round(float(j), 0)))
                 graph.add_vertex(j, k)
                 graph.add_edge((index, "id"), (j, k))
 

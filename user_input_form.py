@@ -34,7 +34,7 @@ questions = [
 valid_options = [
     None,
     None,  # can be any price
-    ['Intel', 'AMD', 'Apple', 'No'],
+    ['Intel', 'AMD', 'Apple'],
     ['Less', 'Medium', 'High'],
     ['4 GB', '8 GB', '16 GB', '32 GB'],
     ['Mac', 'Windows', 'Chrome'],
@@ -92,7 +92,11 @@ class InputBox:
         if self.valid_options is None:  # for price
             return True
 
-        return self.text in self.valid_options
+        for lst in self.valid_options:
+            print(f'{self.text.strip().lower()} == {lst.strip().lower()}')
+            if isinstance(lst, str) and self.text.strip().lower() == lst.strip().lower():
+                return True
+        return False
 
 
 class Button:
@@ -137,8 +141,8 @@ class DisplayRecommendations:
         """Draw the recommendations on screen, for a number of laptops within the limit, including
         a larger display of the main laptop with its specs."""
 
-        laptop_width = 200
-        laptop_height = 200
+        laptop_width = 300
+        laptop_height = 100
         x_space = 50
         y_space = 50
         x_start = 100
@@ -166,7 +170,7 @@ class DisplayRecommendations:
                 continue
 
             primary_laptop = self.recommendations[0]
-            primary_rect = pygame.Rect(200, 100, 1200, 300)
+            primary_rect = pygame.Rect(200, 100, 500, 300)
             pygame.draw.rect(screen, color_inactive, primary_rect, 2)
 
             name = font.render(f"{primary_laptop['Name']}", True, white)
@@ -178,12 +182,12 @@ class DisplayRecommendations:
                 if spec != 'Name':
                     spec_text = font.render(f"{spec}: {value}", True, white)
                     screen.blit(spec_text, (220, y_offset))
-                    y_offset += 25
+                    y_offset += 50
 
             for i in range(1, limit):
                 for key in self.recommendations[i]:
-                    row = (int(i) + 1) // 3
-                    col = (int(i) + 1) % 3
+                    row = (int(i) + 1) // 5
+                    col = (int(i) + 1) % 5
 
                     x = x_start + col * (laptop_width + x_space)
                     y = y_start + row * (laptop_height + y_space)
@@ -252,7 +256,7 @@ def load_boxes():
                     if not box.check_validity():
                         all_valid = False
                         error_message = "Please enter a valid input from the options in brackets in all fields!"
-                    elif int(input_boxes[0].text) > int(input_boxes[1].text):
+                    elif float(input_boxes[0].text) > float(input_boxes[1].text):
                         all_valid = False
                         error_message = "Budget cannot be more than max price!"
 
@@ -276,13 +280,6 @@ def load_boxes():
                         recs_id_list = graph.recommended_laptops(dummy_laptop_id, lim, price_tolerence)
                         img_links = load_image_links('laptops.csv')
                         recs = graph.id_to_rec(recs_id_list, lim, img_links)
-
-                        if lim > 20:
-                            error_message = font.render(
-                                "Limit has exceeded maximum of 20 laptop recommendations! Please enter a number "
-                                "less than 20.", True, white)
-                            show_error = True
-
                         go_back = DisplayRecommendations(recs).display_recs(lim)
                         if not go_back:
                             continue
