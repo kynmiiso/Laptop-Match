@@ -1,0 +1,82 @@
+15 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+16 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+35 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+62 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+196 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+220 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+235 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+249 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+272 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+285 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+333 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+347 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+352 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+397 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+446 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+450 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+477 ['display(in inch)', 'id', 'name', 'os', 'processing power', 'processor', 'ram', 'storage']
+508 ['display(in inch)', 'id', 'name', 'os', 'processing power', 'processor', 'ram', 'storage']
+514 ['display(in inch)', 'id', 'name', 'os', 'processing power', 'processor', 'ram', 'storage']
+
+---
+
+15, 16,  35,  62, 196, 220, 235,249,272,285,333,347,352,397,446,450 ,477,508, 514
+
+---
+
+446,Lenovo V15 G2 Core i3 11th Gen,37500,Intel Core i3 Processor (11th Gen),8 GB DDR4 RAM,64 bit Windows 11 Operating System,1 TB HDD|256 GB SSD,15.6,4.4,53,3
+15,HP 14s Intel Core i3 11th Gen,37990,Intel Core i3 Processor (11th Gen),8 GB DDR4 RAM,64 bit Windows 11 Operating System,256 GB SSD,14,4.2,1779,160
+
+---
+
+15 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+16 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+35 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+62 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+196 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+220 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+235 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+249 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+272 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+285 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+333 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+348 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+352 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+369 ['display(in inch)', 'id', 'name', 'os', 'processing power', 'processor', 'ram', 'storage']
+397 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+447 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+451 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+478 ['display(in inch)', 'id', 'name', 'os', 'processing power', 'processor', 'ram', 'storage']
+509 ['display(in inch)', 'id', 'name', 'os', 'processing power', 'processor', 'ram', 'storage']
+515 ['display(in inch)', 'id', 'name', 'os', 'processing power', 'processor', 'ram', 'storage']
+
+---
+
+16 ['display(in inch)', 'id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+62 ['id', 'name', 'os', 'price(in Rs.)', 'processing power', 'processor', 'ram', 'storage']
+
+16,HP Ryzen 5 Hexa Core 5500U,49123,AMD Ryzen 5 Hexa Core Processor,16 GB DDR4 RAM,64 bit Windows 11 Operating System,512 GB SSD,15.6,4.3,328,34
+62,Lenovo IdeaPad 3 Core i5 12th Gen,56049,Intel Core i5 Processor (12th Gen),8 GB DDR4 RAM,64 bit Windows 11 Operating System,512 GB SSD,15.6,4.2,247,21
+
+---
+
+15
+16
+35
+62
+196
+220
+235
+249
+272
+285
+333
+348
+352
+369
+397
+447
+451
+478
+509
+515
