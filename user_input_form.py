@@ -1,7 +1,7 @@
 """
 CSC111 Project 2 User Input Form
 
-Form to gather information from user about an ideal laptop, in order to inject as a vertex in the graph for comparison
+Form to gather information from user about an ideal laptop and display recommendations
 """
 
 import pygame
@@ -25,7 +25,8 @@ questions = [
     'How much RAM (Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
     'What Operating System would you like to have? (Mac/Windows/Chrome)',
     'How much storage (SSD) would you like to have? (128 GB/256 GB/512 GB/1 TB/2 TB)',
-    'What display size (in inches) would you like to have? (12/13/14/15/16/17)'
+    'Roughly, what display size (in inches) would you like to have? (Integer from 12-17)',
+    'How many laptop recommendations would you like? (Integer from 1-20)'
 ]
 
 valid_options = [
@@ -34,9 +35,10 @@ valid_options = [
     ['Intel', 'AMD', 'Apple', 'No'],
     ['Less', 'Medium', 'High'],
     ['4 GB', '8 GB', '16 GB', '32 GB'],
-    ['Mac', 'Windows'],
+    ['Mac', 'Windows', 'Chrome'],
     ['128 GB', '256 GB', '512 GB', '1 TB', '2 TB'],
-    ['12', '13', '14', '15', '16', '17'],  # remove the 35-inch laptop in dataset since it's not real
+    [str(n) for n in range(12, 18)],
+    [str(i) for i in range(1, 21)]
 ]
 
 box_width = 200
@@ -91,9 +93,8 @@ class InputBox:
         return self.text in self.valid_options
 
 
-class SubmitButton:
-    """ Class for submit button
-    """
+class Button:
+    """ Class for buttons to submit or go back to form."""
 
     def __init__(self, x, y, w, h, button_text):
         self.rect = pygame.Rect(x, y, w, h)
@@ -118,9 +119,84 @@ class SubmitButton:
     def draw_box(self):
         """Draws the input box and text"""
         pygame.draw.rect(screen, self.color, self.rect)
-        text_surface = font.render("Submit", True, white)
+        text_surface = font.render(self.button_text, True, white)
         text_rect = text_surface.get_rect(center=self.rect.center)
         screen.blit(text_surface, text_rect)
+
+
+class DisplayRecommendations:
+    """New screen to display final laptop recs.
+    """
+    def __init__(self, recommendations: list):
+        self.recommendations = recommendations
+        self.back_button = Button(400, 500, box_width, box_height, "Go Back to Form")
+
+    def display_recs(self, limit: int):
+        """Draw the recommendations on screen, for a number of laptops within the limit, including
+        a larger display of the main laptop with its specs."""
+
+        laptop_width = 200
+        laptop_height = 200
+        x_space = 50
+        y_space = 50
+        x_start = 100
+        y_start = 100
+
+        running = True
+
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return False
+
+                if event.type == pygame.MOUSEBUTTONDOWN and self.back_button.rect.collidepoint(event.pos):
+                    return True  # to go back to form
+
+            screen.fill(bg_color)
+            title_font = pygame.font.Font(None, 30)
+            title_surf = title_font.render("Recommended Laptops", True, white)
+            screen.blit(title_surf, (650, 50))
+
+            if not self.recommendations:
+                no_recs = font.render("No laptop recommendations found. Please try again!", True, white)
+                screen.blit(no_recs, (600, 30))
+                pygame.display.flip()
+                continue
+
+            primary_laptop = self.recommendations[0]
+            primary_rect = pygame.Rect(200, 100, 1200, 300)
+            pygame.draw.rect(screen, color_inactive, primary_rect, 2)
+
+            name = font.render(f"1. {primary_laptop['name']}", True, white)
+            screen.blit(name, (220, 120))
+
+            y_offset = 150
+            for spec, value in primary_laptop.items():
+                if spec != 'name':
+                    spec_text = font.render(f"{spec}: {value}", True, white)
+                    screen.blit(spec_text, (220, y_offset))
+                    y_offset += 25
+
+            for i, laptop in enumerate(self.recommendations[1:limit]):
+                if i + 1 >= limit:
+                    break
+                row = (i + 1) // 3
+                col = (i + 1) % 3
+
+                x = x_start + col * (laptop_width + x_space)
+                y = y_start + row * (laptop_height + y_space)
+
+                pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
+
+                name = font.render(f"{laptop['name']}", True, white)
+                screen.blit(name, (x + 20, y + 20))
+
+            self.back_button.draw_box()
+
+            pygame.display.flip()
+            pygame.time.Clock().tick(60)
+
+        return False
 
 
 def load_boxes():
@@ -132,12 +208,22 @@ def load_boxes():
 
     input_boxes = []
 
-    for i, question in enumerate(questions):
+    half = len(questions) // 2
+    if len(questions) % 2 != 0:
+        half += 1
+
+    for i in range(half):
         x = 100
         y = 100 + i * box_spacing
-        input_boxes.append(InputBox(x, y, box_width, box_height, question, valid_options[i]))
+        input_boxes.append(InputBox(x, y, box_width, box_height, questions[i], valid_options[i]))
 
-    submit_button = SubmitButton(800, 700, box_width, box_height, "Submit")
+    for i in range(half, len(questions)):
+        x = 800
+        y = 100 + (i - half) * box_spacing
+        input_boxes.append(InputBox(x, y, box_width, box_height, questions[i], valid_options[i]))
+
+    submit_button = Button(800, 700, box_width, box_height, "Submit")
+    exit_button = Button(1050, 700, box_width, box_height, "Exit")
 
     run = True
     user_specs = None
@@ -156,15 +242,18 @@ def load_boxes():
                     box.event_handler(event)
                     show_error = False
 
+            if event.type == pygame.MOUSEBUTTONDOWN and exit_button.rect.collidepoint(event.pos):
+                run = False
+
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid = True
                 for box in input_boxes:
-                    if int(input_boxes[0].text) > int(input_boxes[1].text):
-                        all_valid = False
-                        error_message = "Budget cannot be more than max price!"
                     if not box.check_validity():
                         all_valid = False
-                        error_message = "Please enter a valid input from the options in brackets."
+                        error_message = "Please enter a valid input from the options in brackets in all fields!"
+                    elif int(input_boxes[0].text) > int(input_boxes[1].text):
+                        all_valid = False
+                        error_message = "Budget cannot be more than max price!"
 
                 if all_valid:
                     user_specs = {}
@@ -175,21 +264,63 @@ def load_boxes():
                             user_specs[i] = float(box.text)
                         else:
                             user_specs[i] = box.text
-                    run = False
+                    if user_specs:
+                        temp_recs = [
+                            {
+                                'name': 'MacBook Pro 16"',
+                                'Price': 2499.99,
+                                'Processor': 'Apple M1 Pro',
+                                'RAM': '16 GB',
+                                'Storage': '512 GB',
+                                'Display': '16 inches'
+                            },
+                            {
+                                'name': 'Dell XPS 15',
+                                'Price': 1999.99,
+                                'Processor': 'Intel i7',
+                                'RAM': '16 GB',
+                                'Storage': '512 GB',
+                                'Display': '15.6 inches'
+                            },
+                            {
+                                'name': 'HP Spectre x360',
+                                'Price': 1499.99,
+                                'Processor': 'Intel i5',
+                                'RAM': '8 GB',
+                                'Storage': '256 GB',
+                                'Display': '13.5 inches'
+                            }
+                        ]
+
+                        key = list(user_specs)[-1]
+                        limit = int(user_specs[key])
+
+                        if limit > 20:
+                            warning = font.render(
+                                "Limit has exceeded maximum of 20 laptop recommendations! Please enter a number "
+                                "less than 20.", True, white)
+                            screen.blit(warning, (600, 30))
+
+                        go_back = DisplayRecommendations(temp_recs).display_recs(limit)
+                        if not go_back:
+                            continue
+
+                        run = True
                 else:
                     show_error = True
 
-        form_screen.fill(bg_color)
-        for box in input_boxes:
-            box.draw_box()
-        submit_button.draw_box()
+            form_screen.fill(bg_color)
+            for box in input_boxes:
+                box.draw_box()
+            submit_button.draw_box()
+            exit_button.draw_box()
 
-        if error_message and show_error:
-            error_surf = font.render(error_message, True, (255, 0, 0))  # Red for errors
-            form_screen.blit(error_surf, (800, 750))
+            if error_message and show_error:
+                error_surf = font.render(error_message, True, (255, 0, 0))  # Red for errors
+                form_screen.blit(error_surf, (800, 750))
 
-        pygame.display.flip()
-        clock.tick(60)
+            pygame.display.flip()
+            clock.tick(60)
 
     pygame.quit()
     return user_specs
