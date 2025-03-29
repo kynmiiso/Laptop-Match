@@ -72,6 +72,6 @@ def show_select_rows(lst: list):
 
 
 if __name__ == "__main__":
-    # show_df()
+    show_df()
     # show_select_rows([15, 16, 35, 62, 196, 220, 235, 249, 272, 285, 333, 347, 352, 397, 446, 450, 477, 508, 514])
-    abnormal_rows()
+    # abnormal_rows()
