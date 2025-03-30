@@ -1,5 +1,5 @@
 """
-CSC111 Project 2 User Input Form
+CSC111 Project 2: LaptopMatch - User Input Form
 
 Form to gather information from user about an ideal laptop and display recommendations
 """
@@ -12,8 +12,6 @@ from io import BytesIO
 import doctest
 import python_ta
 import python_ta.contracts as contracts
-
-from main import Graph, load_laptop_graph
 
 pygame.init()
 
@@ -56,7 +54,9 @@ box_spacing = 100
 
 
 class InputBox:
-    """Create an Input Box to gather user input."""
+    """Create an Input Box to gather user input. Takes in the x and y positions, w (width), and h (height).
+    It also takes questions from the list created and only allows the user to submit their answers if their answers
+    are in valid options."""
     def __init__(self, x, y, w, h, question, valid_opt):
         self.active = False
         self.rect = pygame.Rect(x, y, w, h)
@@ -66,7 +66,7 @@ class InputBox:
         self.valid_options = valid_opt
 
     def event_handler(self, event):
-        """Handles the events occurring in the main loop"""
+        """Handles the events occurring in the main loop of the form display."""
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             self.active = self.rect.collidepoint(event.pos)
@@ -83,7 +83,7 @@ class InputBox:
                     self.text += event.unicode
 
     def draw_box(self):
-        """Draws the input box and text"""
+        """Draws the input box and text."""
         question_surf = font.render(self.question, True, white)
         screen.blit(question_surf, (self.rect.x, self.rect.y - 20))
 
@@ -92,7 +92,8 @@ class InputBox:
         screen.blit(text_surface, (self.rect.x + 10, self.rect.y + 10))
 
     def check_validity(self):
-        """Check if the input is valid according to the valid options"""
+        """Checks if the input is valid according to the valid options list. Stripped and lowercase inputs also
+        allowed. Returns True if input for self.text is valid and False if not valid."""
         if not self.text:
             return False
 
@@ -107,7 +108,8 @@ class InputBox:
 
 
 class Button:
-    """ Class for buttons to submit or go back to form."""
+    """Class for buttons to submit user's ideal laptop specs or go back to form.  Takes in the x and y positions,
+    w (width), and h (height). Also has a specs attribute to store laptop specs from user input."""
 
     def __init__(self, x, y, w, h, button_text):
         self.rect = pygame.Rect(x, y, w, h)
@@ -116,7 +118,7 @@ class Button:
         self.button_text = button_text
 
     def event_handler(self, event, input_boxes: list):
-        """Handles the events occurring in the main loop"""
+        """Handles the events occurring in the main loop when button is pressed."""
 
         if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
             for box in input_boxes:
@@ -130,7 +132,7 @@ class Button:
         return None
 
     def draw_box(self):
-        """Draws the input box and text"""
+        """Draws the button and text."""
         pygame.draw.rect(screen, self.color, self.rect)
         text_surface = font.render(self.button_text, True, white)
         text_rect = text_surface.get_rect(center=self.rect.center)
@@ -138,8 +140,7 @@ class Button:
 
 
 class DisplayRecommendations:
-    """New screen to display final laptop recs.
-    """
+    """A new screen to display final laptop recommendations."""
     def __init__(self, recommendations):
         self.recommendations = recommendations
         self.scroll = 0
@@ -148,7 +149,9 @@ class DisplayRecommendations:
 
     def display_recs(self, limit: int):
         """Draw the recommendations on screen, for a number of laptops within the limit, including
-        a larger display of the main laptop with its specs."""
+        a larger display of the main laptop with its specs. Also has a scroll functionality for the
+        screen. Returns False if the user quit the screen, and returns True to go back to the
+        form when back button is pressed."""
 
         screen_height = 900
         item_height = 150
@@ -179,12 +182,6 @@ class DisplayRecommendations:
             title_font = pygame.font.Font(None, 30)
             title_surf = title_font.render("Recommended Laptops", True, white)
             screen.blit(title_surf, (650, 50 - self.scroll))
-
-            if not self.recommendations:
-                no_recs = font.render("No laptop recommendations found. Please try again!", True, white)
-                screen.blit(no_recs, (600, 30))
-                pygame.display.flip()
-                continue
 
             primary_laptop = self.recommendations[0]
             primary_rect = pygame.Rect(100, 150 - self.scroll, 600, 400)
@@ -236,8 +233,8 @@ class DisplayRecommendations:
 
 
 def load_boxes():
-    """Loads text input boxes to get user input about specs for laptop.
-    """
+    """Loads text input boxes to get user input about specs for laptop. Returns the user's preferred specifications
+     for the laptop from the input."""
 
     pygame.init()
     form_screen = pygame.display.set_mode([1600, 900])
@@ -366,15 +363,6 @@ def load_boxes():
 
 if __name__ == "__main__":
     g = load_laptop_graph("laptops.csv")[0]
-
-    # op = g.recommended_laptops(-1, limit, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
-    # # TODO: forward to output screen
-    #
-    # print(op)
-    # # output_function(op, g)
-
-    # g = load_laptop_graph("laptops.csv")
-
     specs = load_boxes()
 
     doctest.testmod()
