@@ -3,13 +3,13 @@ CSC111 Project 2 User Input Form
 
 Form to gather information from user about an ideal laptop and display recommendations
 """
-import math
 from random import randint
 from io import BytesIO
 from typing import Optional
 import doctest
-import pygame
+import math
 import requests
+import pygame
 import python_ta.contracts
 from graph_class import load_laptop_graph, add_dummy
 
@@ -198,8 +198,7 @@ class DisplayRecommendations:
             screen.blit(title_surf, (650, 50 - self.scroll))
 
             primary_laptop = self.recommendations[0]
-            primary_rect = pygame.Rect(100, 150 - self.scroll, 600, 400)
-            pygame.draw.rect(screen, color_inactive, primary_rect, 2)
+            pygame.draw.rect(screen, color_inactive, pygame.Rect(100, 150 - self.scroll, 600, 400), 2)
 
             name = font.render(f"Best Recommendation: {primary_laptop['Name']}", True, white)
             screen.blit(name, (150, 200 - self.scroll))
@@ -208,14 +207,12 @@ class DisplayRecommendations:
 
             for spec, value in primary_laptop.items():
                 if spec not in {'Name', 'Image'}:
-                    spec_text = font.render(f"{spec}: {value}", True, white)
-                    screen.blit(spec_text, (150, y_offset - self.scroll))
+                    screen.blit(font.render(f"{spec}: {value}", True, white),
+                                (150, y_offset - self.scroll))
                     y_offset += 50
                 if spec == 'Image':
-                    response = requests.get(value)
-                    image_data = BytesIO(response.content)
-                    img = pygame.image.load(image_data)
-                    img = pygame.transform.scale(img, (300, 200))
+                    image_data = BytesIO(requests.get(value).content)
+                    img = pygame.transform.scale(pygame.image.load(image_data), (300, 200))
                     screen.blit(img, (350, 270 - self.scroll))
 
             self.draw_text(limit)
@@ -253,14 +250,14 @@ class DisplayRecommendations:
             screen.blit(name_2, (x + 20, y + 40))
 
 
-def generate_random_specs(valid_options_: list) -> list:
+def generate_random_specs(val_opt: list) -> list:
     """Generate a random combination of laptop specs according to what is required"""
     # RANDOMISE DATA SPEC SAMPLE
     min_price = randint(300, 700)
     max_price = randint(min_price, 1500)
     data_spec_sample = [str(min_price), str(max_price)]
 
-    for lst in valid_options_:
+    for lst in val_opt:
         if lst is None:
             continue
         data_spec_sample.append(lst[randint(0, len(lst) - 1)])
@@ -342,7 +339,7 @@ def submit(all_valid: bool, input_boxes: list[InputBox], dum_id: int = -1) -> No
         _ = DisplayRecommendations(recs).display_recs(lim)
 
 
-def load_boxes(dum_id: int = -1) -> None:
+def load_boxes(dumm_id_: int = -1) -> None:
     """Loads text input boxes to get user input about specs for laptop. Returns the user's preferred specifications
      for the laptop from the input."""
 
@@ -392,8 +389,8 @@ def load_boxes(dum_id: int = -1) -> None:
 
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid, error_message = verify(input_boxes)
-                submit(all_valid, input_boxes, dum_id)
-                dum_id -= 1
+                submit(all_valid, input_boxes, dumm_id_)
+                dumm_id_ -= 1
 
             form_screen.fill(BG_COLOR)
             for box in input_boxes:
