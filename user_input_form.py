@@ -7,6 +7,7 @@ Form to gather information from user about an ideal laptop and display recommend
 import pygame
 from image_loader import load_image_links
 from main import load_laptop_graph, add_dummy
+import requests
 
 pygame.init()
 
@@ -135,18 +136,24 @@ class DisplayRecommendations:
     """
     def __init__(self, recommendations):
         self.recommendations = recommendations
-        self.back_button = Button(400, 500, box_width, box_height, "Go Back to Form")
+        self.scroll = 0
+        self.back_button = Button(1200, 100 - self.scroll, box_width, box_height, "Go to Form")
+        self.total_height = len(recommendations) * 120
 
     def display_recs(self, limit: int):
         """Draw the recommendations on screen, for a number of laptops within the limit, including
         a larger display of the main laptop with its specs."""
 
+        screen_height = 900
+        item_height = 150
+
         laptop_width = 300
-        laptop_height = 100
+        laptop_height = 300
         x_space = 50
         y_space = 50
         x_start = 100
-        y_start = 100
+        y_start = 250
+        scroll_speed = 30
 
         running = True
 
@@ -155,13 +162,17 @@ class DisplayRecommendations:
                 if event.type == pygame.QUIT:
                     running = False
 
-                if event.type == pygame.MOUSEBUTTONDOWN and self.back_button.rect.collidepoint(event.pos):
+                elif event.type == pygame.MOUSEBUTTONDOWN and self.back_button.rect.collidepoint(event.pos):
                     return True  # to go back to form
+
+                elif event.type == pygame.MOUSEWHEEL:
+                    self.scroll -= event.y * scroll_speed
+                    self.scroll = max(0, min(self.scroll, self.total_height - screen_height))
 
             screen.fill(bg_color)
             title_font = pygame.font.Font(None, 30)
             title_surf = title_font.render("Recommended Laptops", True, white)
-            screen.blit(title_surf, (650, 50))
+            screen.blit(title_surf, (650, 50 - self.scroll))
 
             if not self.recommendations:
                 no_recs = font.render("No laptop recommendations found. Please try again!", True, white)
@@ -170,31 +181,31 @@ class DisplayRecommendations:
                 continue
 
             primary_laptop = self.recommendations[0]
-            primary_rect = pygame.Rect(200, 100, 500, 300)
+            primary_rect = pygame.Rect(200, 100 - self.scroll, 500, 400)
             pygame.draw.rect(screen, color_inactive, primary_rect, 2)
 
             name = font.render(f"{primary_laptop['Name']}", True, white)
-            screen.blit(name, (220, 120))
+            screen.blit(name, (220, 120 - self.scroll))
 
-            y_offset = 150
+            y_offset = 170
 
             for spec, value in primary_laptop.items():
                 if spec != 'Name':
                     spec_text = font.render(f"{spec}: {value}", True, white)
-                    screen.blit(spec_text, (220, y_offset))
+                    screen.blit(spec_text, (220, y_offset - self.scroll))
                     y_offset += 50
 
             for i in range(1, limit):
-                for key in self.recommendations[i]:
-                    row = (int(i) + 1) // 5
-                    col = (int(i) + 1) % 5
+                for _ in self.recommendations[i]:
+                    row = (int(i) + 3) // 4
+                    col = (int(i) + 1) % 4
 
                     x = x_start + col * (laptop_width + x_space)
-                    y = y_start + row * (laptop_height + y_space)
-
-                    pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
-                    name = font.render(f"{self.recommendations[i]['Name']}", True, white)
-                    screen.blit(name, (x + 20, y + 20))
+                    y = y_start + row * (laptop_height + y_space) - self.scroll
+                    if item_height < y < screen_height:
+                        pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
+                        name = font.render(f"{self.recommendations[i]['Name']}", True, white)
+                        screen.blit(name, (x + 20, y + 20))
 
             self.back_button.draw_box()
 
