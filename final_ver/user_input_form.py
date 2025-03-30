@@ -3,13 +3,13 @@ CSC111 Project 2 User Input Form
 
 Form to gather information from user about an ideal laptop and display recommendations
 """
+import math
 from random import randint
 from io import BytesIO
 from typing import Optional
-import pygame
-import math
-import requests
 import doctest
+import pygame
+import requests
 import python_ta.contracts
 from graph_class import load_laptop_graph, add_dummy
 
@@ -253,14 +253,14 @@ class DisplayRecommendations:
             screen.blit(name_2, (x + 20, y + 40))
 
 
-def generate_random_specs(valid_options: list) -> list:
+def generate_random_specs(valid_options_: list) -> list:
     """Generate a random combination of laptop specs according to what is required"""
     # RANDOMISE DATA SPEC SAMPLE
     min_price = randint(300, 700)
     max_price = randint(min_price, 1500)
     data_spec_sample = [str(min_price), str(max_price)]
 
-    for lst in valid_options:
+    for lst in valid_options_:
         if lst is None:
             continue
         data_spec_sample.append(lst[randint(0, len(lst) - 1)])
@@ -322,7 +322,7 @@ def get_user_specs(input_boxes: list[InputBox]) -> tuple[dict, list]:
     return user_specs, empty_boxes
 
 
-def submit(all_valid: bool, input_boxes: list[InputBox], dummy_laptop_id: int = -1) -> None:
+def submit(all_valid: bool, input_boxes: list[InputBox], dum_id: int = -1) -> None:
     """submit all info"""
     if not all_valid:
         return
@@ -334,15 +334,15 @@ def submit(all_valid: bool, input_boxes: list[InputBox], dummy_laptop_id: int = 
         graph, img_links = load_laptop_graph('laptops.csv', 'parameters_data.json')
         # price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
         price_tolerence = (float(user_specs[1]) - float(user_specs[0])) / 2
-        add_dummy(graph, user_specs, dummy_laptop_id)
+        add_dummy(graph, user_specs, dum_id)
 
-        recs_id_list = graph.recommended_laptops(dummy_laptop_id, lim, price_tolerence, empty_boxes)
+        recs_id_list = graph.recommended_laptops(dum_id, lim, price_tolerence, empty_boxes)
         # dummy_laptop_id -= 1  # reduce DUMMY LAPTOP ID every time we send a new laptop in
         recs = graph.id_to_rec(recs_id_list, lim, img_links)
         _ = DisplayRecommendations(recs).display_recs(lim)
 
 
-def load_boxes(dummy_laptop_id: int = -1) -> None:
+def load_boxes(dum_id: int = -1) -> None:
     """Loads text input boxes to get user input about specs for laptop. Returns the user's preferred specifications
      for the laptop from the input."""
 
@@ -392,8 +392,8 @@ def load_boxes(dummy_laptop_id: int = -1) -> None:
 
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid, error_message = verify(input_boxes)
-                submit(all_valid, input_boxes, dummy_laptop_id)
-                dummy_laptop_id -= 1
+                submit(all_valid, input_boxes, dum_id)
+                dum_id -= 1
 
             form_screen.fill(BG_COLOR)
             for box in input_boxes:
