@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any
 from python_ta.contracts import check_contracts
 import pandas as pd
-
-# from output_display import output_function
-# import user_input_form
 
 
 class _Vertex:

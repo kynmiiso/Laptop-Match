@@ -5,10 +5,10 @@ Form to gather information from user about an ideal laptop and display recommend
 """
 
 import pygame
-from image_loader import load_image_links
 from main import load_laptop_graph, add_dummy
 import requests
 from io import BytesIO
+from python_ta.contracts import check_contracts
 
 pygame.init()
 
