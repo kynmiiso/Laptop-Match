@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import doctest
 import json
 from typing import Any, Optional
+
+import python_ta
 from python_ta.contracts import check_contracts
 import pandas as pd
 
@@ -25,7 +28,59 @@ class _Vertex:
         self.kind = kind
         self.neighbours = set()
 
-    def similarity_score(self, other, price_tolerance: float = 100.0,
+    # def _remove_certain_vertices(self, other: _Vertex,
+    #                              empty_vertice_kinds: Optional[list[str]] = None) -> tuple[set, set, _Vertex, _Vertex]:
+    #     s_neighbor_no_price = self.neighbours.copy()
+    #     o_neighbor_no_price = other.neighbours.copy()
+    #
+    #     # GET PRICE FROM NEIGHBOURS
+    #     s_price = [v_neighbor for v_neighbor in self.neighbours if v_neighbor.kind == "price(in Rs.)"][0]
+    #     o_price = [v_neighbor for v_neighbor in other.neighbours if v_neighbor.kind == "price(in Rs.)"][0]
+    #
+    #     s_to_remove = [s_price]
+    #     o_to_remove = [o_price]
+    #
+    #     # EXCLUDE EMPTY VERTICES FOR COUNT
+    #     # todo: attempt partial matching
+    #     # s_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
+    #     o_to_remove.extend([v_neighbor for v_neighbor in other.neighbours if v_neighbor.kind in empty_vertice_kinds + ["name"]])
+    #
+    #     # REMOVE VERTICES
+    #     for v in s_to_remove:
+    #         s_neighbor_no_price.remove(v)
+    #     for v in o_to_remove:
+    #         o_neighbor_no_price.remove(v)
+    #
+    #     # FINALISE SET TO ONLY CONTAIN ITEMS
+    #     s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
+    #     o_neighbor_no_price = {v.item for v in o_neighbor_no_price}
+    #
+    #     return s_neighbor_no_price, o_neighbor_no_price, s_price, o_price
+
+    def _remove_certain_vertices(self,
+                                 empty_vertice_kinds: Optional[list[str]] = None) -> tuple[set, _Vertex]:
+        s_neighbor_no_price = self.neighbours.copy()
+
+        # GET PRICE FROM NEIGHBOURS
+        s_price = [v_neighbor for v_neighbor in self.neighbours if v_neighbor.kind == "price(in Rs.)"][0]
+
+        s_to_remove = [s_price]
+
+        # EXCLUDE EMPTY VERTICES FOR COUNT
+        # todo: attempt partial matching
+        s_to_remove.extend([v_neighbor for v_neighbor in self.neighbours
+                            if v_neighbor.kind in empty_vertice_kinds + ["name"]])
+
+        # REMOVE VERTICES
+        for v in s_to_remove:
+            s_neighbor_no_price.remove(v)
+
+        # FINALISE SET TO ONLY CONTAIN ITEMS
+        s_neighbor_no_price = {v_neighbor.item for v_neighbor in s_neighbor_no_price}
+
+        return s_neighbor_no_price, s_price
+
+    def similarity_score(self, other: _Vertex, price_tolerance: float = 100.0,
                          empty_vertice_kinds: Optional[list[str]] = None) -> float:
         """Return the similarity score between this vertex and other.
         If this vertex has the same item as another vertex, and they are both of the same kind,
@@ -36,34 +91,38 @@ class _Vertex:
         - self.kind == 'id'
         """
         if empty_vertice_kinds is None:
-            empty_vertice_kinds = list()
+            empty_vertice_kinds = []
         if len(self.neighbours) == 0 or len(other.neighbours) == 0:
             return 0
 
-        s_neighbor_no_price = self.neighbours.copy()
-        o_neighbor_no_price = other.neighbours.copy()
+        # s_neighbor_no_price, o_neighbor_no_price = other.neighbours.copy()
+        #
+        # # GET PRICE FROM NEIGHBOURS
+        # s_price = [v for v in self.neighbours if v.kind == "price(in Rs.)"][0]
+        # o_price = [v for v in other.neighbours if v.kind == "price(in Rs.)"][0]
+        #
+        # s_to_remove = [s_price]
+        # o_to_remove = [o_price]
+        #
+        # # EXCLUDE EMPTY VERTICES FOR COUNT
+        # # todo: attempt partial matching
+        # # s_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
+        # o_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
+        #
+        # # REMOVE VERTICES
+        # for v in s_to_remove:
+        #     s_neighbor_no_price.remove(v)
+        # for v in o_to_remove:
+        #     o_neighbor_no_price.remove(v)
+        #
+        # # FINALISE SET TO ONLY CONTAIN ITEMS
+        # s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
+        # o_neighbor_no_price = {v.item for v in o_neighbor_no_price}
 
-        # GET PRICE FROM NEIGHBOURS
-        s_price = [v for v in self.neighbours if v.kind == "price(in Rs.)"][0]
-        o_price = [v for v in other.neighbours if v.kind == "price(in Rs.)"][0]
+        s_neighbor_no_price, s_price = self._remove_certain_vertices(empty_vertice_kinds)
+        o_neighbor_no_price, o_price = other._remove_certain_vertices(empty_vertice_kinds)
 
-        s_to_remove = [s_price]
-        o_to_remove = [o_price]
-
-        # EXCLUDE EMPTY VERTICES FOR COUNT
-        # todo: attempt partial matching
-        # s_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
-        o_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
-
-        # REMOVE VERTICES
-        for v in s_to_remove:
-            s_neighbor_no_price.remove(v)
-        for v in o_to_remove:
-            o_neighbor_no_price.remove(v)
-
-        # FINALISE SET TO ONLY CONTAIN ITEMS
-        s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
-        o_neighbor_no_price = {v.item for v in o_neighbor_no_price}
+        # print(f'{s_neighbor_no_price}, {s_price.item}, {o_neighbor_no_price}, {o_price.item}')
 
         # Non price similarity score
         numerator = len(s_neighbor_no_price.intersection(o_neighbor_no_price))
@@ -73,13 +132,13 @@ class _Vertex:
         # check whether the price falls between the range min_range to max_range
 
         # todo: DEBUG
-        if empty_vertice_kinds:
-            f = len(empty_vertice_kinds)
-        else:
-            f = 0
-        print(f'number of factors: {FACTORS_EXCL_LIMIT}, '
-              f'number of unaccounted specs: {f},'
-              f'formula: ({numerator}/{denominator}) + ({sim_score_price} * (1/{FACTORS_EXCL_LIMIT - f}))')
+        # if empty_vertice_kinds:
+        #     f = len(empty_vertice_kinds)
+        # else:
+        #     f = 0
+        # print(f'number of factors: {FACTORS_EXCL_LIMIT}, '
+        #       f'number of unaccounted specs: {f},'
+        #       f'formula: ({numerator}/{denominator}) + ({sim_score_price} * (1/{FACTORS_EXCL_LIMIT - f}))')
 
         if empty_vertice_kinds:
             factors = FACTORS_EXCL_LIMIT - len(empty_vertice_kinds)
@@ -90,9 +149,8 @@ class _Vertex:
             return sim_score_price / factors
         else:
             # todo: DEBUG
-            print(f'keys not included: {empty_vertice_kinds}')
+            # print(f'keys not included: {empty_vertice_kinds}')
 
-            # return numerator / denominator + (sim_score_price * (1 / FACTORS_EXCL_LIMIT))
             return (numerator / denominator) + (sim_score_price * (1 / factors))
             # weight for the price depends on number of factors considered
 
@@ -159,11 +217,11 @@ class Graph:
         """Adds a rating to the graph"""
         self._ratings[id_] = rating
 
-    def get_vertices(self, kind: str):
+    def get_vertices(self, kind: str) -> set[Any]:
         """Return a set of all vertice items of some kind"""
         return {v.item for v in self._vertices.values() if v.kind == kind}
 
-    def get_neighbours(self, item: Any, kind: str):
+    def get_neighbours(self, item: Any, kind: str) -> dict:
         """Return a set of the neighbours of the given item.
 
         Note that the *items* are returned, not the _Vertex objects themselves.
@@ -219,7 +277,7 @@ class Graph:
                     # recommended_dict[vertex] =
                     # similarity_score + (self._ratings[vertex[0]] / 5 * (1 / FACTORS_EXCL_LIMIT))
                     # todo: DEBUG
-                    print(f'formula: {similarity_score} + ({self._ratings[vertex[0]]} / 5 * (1 / {factors}))')
+                    # print(f'formula (2): {similarity_score} + ({self._ratings[vertex[0]]} / 5 * (1 / {factors}))')
 
                     recommended_dict[vertex] = similarity_score + (self._ratings[vertex[0]] / 5 * (1 / factors))
 
@@ -227,7 +285,7 @@ class Graph:
         recommended_list.sort(reverse=True)
 
         # todo: DEBUG
-        print(recommended_list[:limit])
+        # print(recommended_list[:limit])
 
         recs = [i[1][0] for i in recommended_list[0:limit]]
 
@@ -258,7 +316,7 @@ class Graph:
         return recommendations
 
 
-def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1):
+def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1) -> None:
     """Inject dummy laptop into graph"""
     data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
 
@@ -270,7 +328,7 @@ def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1):
         # limit_key = list(specs_dict)[8]
         # limit = int(specs_dict[limit_key])
         for ques, ans in specs_dict.items():
-            print(f"{ques}: {ans}")
+            # print(f"{ques}: {ans}")
 
             # create price vertex
             if ques == 0:
@@ -291,7 +349,7 @@ def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1):
                 continue
 
 
-def _convert_split(s: str, mapping: dict):
+def _convert_split(s: str, mapping: dict) -> tuple[str, str]:
     """
     s: string data
     mapping: conditions thing; maps from broad category to specifics (e.g. {"Intel": {"low": ["i3"], "medium": ["i5"]}}
@@ -311,7 +369,7 @@ def _convert_split(s: str, mapping: dict):
     return broad, specific
 
 
-def _convert_val(s: str, mapping: dict):
+def _convert_val(s: str, mapping: dict) -> str:
     """
     s: string data
     mapping: mapping from output key to string in data or blank
@@ -355,7 +413,7 @@ def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
     df = df.reset_index()
     df = df.drop(columns=['index'])
 
-    img_links = {index: row['img_link'] for index, row in df.reset_index().iterrows()}
+    img_links = {img_index: img_row['img_link'] for img_index, img_row in df.reset_index().iterrows()}
 
     df = df.drop(columns=['img_link'])
 
@@ -388,3 +446,18 @@ def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
                 graph.add_edge((index, "id"), (j, k))
 
     return graph, img_links
+
+
+if __name__ == "__main__":
+    doctest.testmod()
+    python_ta.check_all(config={
+        'extra-imports': [
+            'json',
+            'typing',
+            'pandas'
+        ],
+        'allowed-io': [],
+        'max-line-length': 120
+    })
+
+    python_ta.contracts.check_all_contracts("user_input_form.py")
