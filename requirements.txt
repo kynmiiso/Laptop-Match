@@ -1,0 +1,9 @@
+pygame
+pandas
+json
+random
+requests
+typing
+io
+python_ta
+doctest
