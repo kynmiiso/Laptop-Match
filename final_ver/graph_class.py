@@ -7,7 +7,7 @@ import json
 from typing import Any, Optional
 
 import python_ta
-from python_ta.contracts import check_contracts
+# from python_ta.contracts import check_contracts
 import pandas as pd
 
 FACTORS_EXCL_LIMIT = 7  # price range, specs, etc
@@ -28,35 +28,6 @@ class _Vertex:
         self.kind = kind
         self.neighbours = set()
 
-    # def _remove_certain_vertices(self, other: _Vertex,
-    #                              empty_vertice_kinds: Optional[list[str]] = None) -> tuple[set, set, _Vertex, _Vertex]:
-    #     s_neighbor_no_price = self.neighbours.copy()
-    #     o_neighbor_no_price = other.neighbours.copy()
-    #
-    #     # GET PRICE FROM NEIGHBOURS
-    #     s_price = [v_neighbor for v_neighbor in self.neighbours if v_neighbor.kind == "price(in Rs.)"][0]
-    #     o_price = [v_neighbor for v_neighbor in other.neighbours if v_neighbor.kind == "price(in Rs.)"][0]
-    #
-    #     s_to_remove = [s_price]
-    #     o_to_remove = [o_price]
-    #
-    #     # EXCLUDE EMPTY VERTICES FOR COUNT
-    #     # todo: attempt partial matching
-    #     # s_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
-    #     o_to_remove.extend([v_neighbor for v_neighbor in other.neighbours if v_neighbor.kind in empty_vertice_kinds + ["name"]])
-    #
-    #     # REMOVE VERTICES
-    #     for v in s_to_remove:
-    #         s_neighbor_no_price.remove(v)
-    #     for v in o_to_remove:
-    #         o_neighbor_no_price.remove(v)
-    #
-    #     # FINALISE SET TO ONLY CONTAIN ITEMS
-    #     s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
-    #     o_neighbor_no_price = {v.item for v in o_neighbor_no_price}
-    #
-    #     return s_neighbor_no_price, o_neighbor_no_price, s_price, o_price
-
     def _remove_certain_vertices(self,
                                  empty_vertice_kinds: Optional[list[str]] = None) -> tuple[set, _Vertex]:
         s_neighbor_no_price = self.neighbours.copy()
@@ -67,7 +38,6 @@ class _Vertex:
         s_to_remove = [s_price]
 
         # EXCLUDE EMPTY VERTICES FOR COUNT
-        # todo: attempt partial matching
         s_to_remove.extend([v_neighbor for v_neighbor in self.neighbours
                             if v_neighbor.kind in empty_vertice_kinds + ["name"]])
 
@@ -95,30 +65,6 @@ class _Vertex:
         if len(self.neighbours) == 0 or len(other.neighbours) == 0:
             return 0
 
-        # s_neighbor_no_price, o_neighbor_no_price = other.neighbours.copy()
-        #
-        # # GET PRICE FROM NEIGHBOURS
-        # s_price = [v for v in self.neighbours if v.kind == "price(in Rs.)"][0]
-        # o_price = [v for v in other.neighbours if v.kind == "price(in Rs.)"][0]
-        #
-        # s_to_remove = [s_price]
-        # o_to_remove = [o_price]
-        #
-        # # EXCLUDE EMPTY VERTICES FOR COUNT
-        # # todo: attempt partial matching
-        # # s_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
-        # o_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
-        #
-        # # REMOVE VERTICES
-        # for v in s_to_remove:
-        #     s_neighbor_no_price.remove(v)
-        # for v in o_to_remove:
-        #     o_neighbor_no_price.remove(v)
-        #
-        # # FINALISE SET TO ONLY CONTAIN ITEMS
-        # s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
-        # o_neighbor_no_price = {v.item for v in o_neighbor_no_price}
-
         s_neighbor_no_price, s_price = self._remove_certain_vertices(empty_vertice_kinds)
         o_neighbor_no_price, o_price = other._remove_certain_vertices(empty_vertice_kinds)
 
@@ -131,15 +77,6 @@ class _Vertex:
         sim_score_price = int(abs(float(s_price.item) - float(o_price.item)) <= price_tolerance)
         # check whether the price falls between the range min_range to max_range
 
-        # todo: DEBUG
-        # if empty_vertice_kinds:
-        #     f = len(empty_vertice_kinds)
-        # else:
-        #     f = 0
-        # print(f'number of factors: {FACTORS_EXCL_LIMIT}, '
-        #       f'number of unaccounted specs: {f},'
-        #       f'formula: ({numerator}/{denominator}) + ({sim_score_price} * (1/{FACTORS_EXCL_LIMIT - f}))')
-
         if empty_vertice_kinds:
             factors = FACTORS_EXCL_LIMIT - len(empty_vertice_kinds)
         else:
@@ -148,9 +85,6 @@ class _Vertex:
         if denominator == 0:
             return sim_score_price / factors
         else:
-            # todo: DEBUG
-            # print(f'keys not included: {empty_vertice_kinds}')
-
             return (numerator / denominator) + (sim_score_price * (1 / factors))
             # weight for the price depends on number of factors considered
 
@@ -201,18 +135,6 @@ class Graph:
         else:
             raise ValueError
 
-    # def remove_vertex(self, item, kind) -> None:
-    #     """remove"""
-    #     if (item, kind) not in self._vertices:
-    #         raise ValueError
-    #
-    #     v1 = self._vertices[(item, kind)]
-    #     for u in v1.neighbours:
-    #         _ = u.neighbours.remove(v1)
-    #         _ = v1.neighbours.remove(u)
-    #
-    #     self._vertices.pop((item, kind))
-
     def add_rating(self, id_: Any, rating: float) -> None:
         """Adds a rating to the graph"""
         self._ratings[id_] = rating
@@ -242,22 +164,15 @@ class Graph:
 
         Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
         """
-        # todo: DEBUG
-        # print(f'{item1} = {item1 in self._vertices}, {item2} = {item2 in self._vertices}')
 
         if item1 not in self._vertices or item2 not in self._vertices:
             raise ValueError
         else:
             v1 = self._vertices[item1]
             v2 = self._vertices[item2]
-            # print(f'{item1}: {v1.item}, {item2}: {v2.item}')
             sim_score = v1.similarity_score(v2, price_tolerance, empty_vertices_kind)  # allow partial matching
 
-            # if sim_score >= 0.4:
-            #     print(f'{item1}: {v1.item}, {item2}: {v2.item}, sim_score: {sim_score}')
-
             return sim_score
-            # return v1.similarity_score(v2, price_tolerance)
 
     def recommended_laptops(self, specs_: int, limit: int, price_tolerance: float,
                             empty_vertices_kind: Optional[list] = None) -> list:
@@ -274,18 +189,11 @@ class Graph:
                         factors = FACTORS_EXCL_LIMIT
                     else:
                         factors = FACTORS_EXCL_LIMIT - len(empty_vertices_kind)
-                    # recommended_dict[vertex] =
-                    # similarity_score + (self._ratings[vertex[0]] / 5 * (1 / FACTORS_EXCL_LIMIT))
-                    # todo: DEBUG
-                    # print(f'formula (2): {similarity_score} + ({self._ratings[vertex[0]]} / 5 * (1 / {factors}))')
 
                     recommended_dict[vertex] = similarity_score + (self._ratings[vertex[0]] / 5 * (1 / factors))
 
         recommended_list = [(recommended_dict[laptop_id], laptop_id) for laptop_id in recommended_dict]
         recommended_list.sort(reverse=True)
-
-        # todo: DEBUG
-        # print(recommended_list[:limit])
 
         recs = [i[1][0] for i in recommended_list[0:limit]]
 
@@ -325,11 +233,7 @@ def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1) -> None:
     # diff = 0
 
     if specs_dict is not None:
-        # limit_key = list(specs_dict)[8]
-        # limit = int(specs_dict[limit_key])
         for ques, ans in specs_dict.items():
-            # print(f"{ques}: {ans}")
-
             # create price vertex
             if ques == 0:
                 tot_price += float(ans)
@@ -337,7 +241,6 @@ def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1) -> None:
             elif ques == 1:
                 tot_price += float(ans)
                 val = tot_price / 2
-                # diff = float(ans) - val
                 g.add_vertex(val, 'price(in Rs.)')
                 g.add_edge((dummy_id, "id"), (val, 'price(in Rs.)'))
                 # for similarity score, we get range which is mean_price +- diff
@@ -456,7 +359,7 @@ if __name__ == "__main__":
             'typing',
             'pandas'
         ],
-        'allowed-io': [],
+        'allowed-io': ['_load_data'],
         'max-line-length': 120
     })
 
