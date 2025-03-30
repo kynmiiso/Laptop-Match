@@ -7,6 +7,8 @@ from typing import Any, Optional
 from python_ta.contracts import check_contracts
 import pandas as pd
 
+FACTORS_EXCL_LIMIT = 7  # price range, specs, etc
+
 
 class _Vertex:
     """A vertex in a laptop recommendation graph, used to represent the laptop's specs, including 'name', 'price',
@@ -71,15 +73,26 @@ class _Vertex:
         # check whether the price falls between the range min_range to max_range
 
         # todo: DEBUG
+        if empty_vertice_kinds:
+            f = len(empty_vertice_kinds)
+        else:
+            f = 0
+        print(f'number of factors: {FACTORS_EXCL_LIMIT}, '
+              f'number of unaccounted specs: {f},'
+              f'formula: ({numerator}/{denominator}) + ({sim_score_price} * (1/{FACTORS_EXCL_LIMIT - f}))')
 
-        if numerator == 0 or denominator == 0:
-            return sim_score_price
+        if empty_vertice_kinds:
+            factors = FACTORS_EXCL_LIMIT - len(empty_vertice_kinds)
+        else:
+            factors = FACTORS_EXCL_LIMIT
+
+        if denominator == 0:
+            return sim_score_price / factors
         else:
             # todo: DEBUG
             print(f'keys not included: {empty_vertice_kinds}')
 
-            factors = 8 - len(empty_vertice_kinds)  # number of total factors: 8
-            # return numerator / denominator + (sim_score_price * (1 / 8))  # weight for the price is 1/8
+            # return numerator / denominator + (sim_score_price * (1 / FACTORS_EXCL_LIMIT))
             return (numerator / denominator) + (sim_score_price * (1 / factors))
             # weight for the price depends on number of factors considered
 
@@ -200,17 +213,21 @@ class Graph:
                                                              empty_vertices_kind)  # allow partial matching
                 if similarity_score > 0:  # has some degree of similarity
                     if not empty_vertices_kind:
-                        factors = 8
+                        factors = FACTORS_EXCL_LIMIT
                     else:
-                        factors = 8 - len(empty_vertices_kind)  # number of total factors: 8
-                    # recommended_dict[vertex] = similarity_score + (self._ratings[vertex[0]] / 5 * (1 / 8))
+                        factors = FACTORS_EXCL_LIMIT - len(empty_vertices_kind)
+                    # recommended_dict[vertex] =
+                    # similarity_score + (self._ratings[vertex[0]] / 5 * (1 / FACTORS_EXCL_LIMIT))
+                    # todo: DEBUG
+                    print(f'formula: {similarity_score} + ({self._ratings[vertex[0]]} / 5 * (1 / {factors}))')
+
                     recommended_dict[vertex] = similarity_score + (self._ratings[vertex[0]] / 5 * (1 / factors))
 
         recommended_list = [(recommended_dict[laptop_id], laptop_id) for laptop_id in recommended_dict]
         recommended_list.sort(reverse=True)
 
         # todo: DEBUG
-        print([(round(recommended_dict[laptop_id], 1), laptop_id) for laptop_id in recommended_dict])
+        print(recommended_list[:limit])
 
         recs = [i[1][0] for i in recommended_list[0:limit]]
 
