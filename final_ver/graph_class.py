@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import doctest
 import json
 from typing import Any, Optional
 
-import python_ta
 # from python_ta.contracts import check_contracts
 import pandas as pd
 
@@ -179,17 +177,17 @@ class Graph:
         """Get recommended laptops"""
         recommended_dict = {}
 
+        if not empty_vertices_kind:
+            factors = FACTORS_EXCL_LIMIT
+        else:
+            factors = FACTORS_EXCL_LIMIT - len(empty_vertices_kind)
+
         for vertex in self._vertices:
             vertex_obj = self._vertices[vertex]
             if vertex != specs_ and vertex_obj.kind == 'id' and vertex[0] >= 0:
                 similarity_score = self.get_similarity_score((specs_, "id"), vertex, price_tolerance,
                                                              empty_vertices_kind)  # allow partial matching
                 if similarity_score > 0:  # has some degree of similarity
-                    if not empty_vertices_kind:
-                        factors = FACTORS_EXCL_LIMIT
-                    else:
-                        factors = FACTORS_EXCL_LIMIT - len(empty_vertices_kind)
-
                     recommended_dict[vertex] = similarity_score + (self._ratings[vertex[0]] / 5 * (1 / factors))
 
         recommended_list = [(recommended_dict[laptop_id], laptop_id) for laptop_id in recommended_dict]
@@ -296,16 +294,17 @@ def _load_data(filename: str) -> dict:
     return grouped_data
 
 
-def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
+def load_laptop_graph(laptop_data_file: str, parameters_file: str) -> tuple[Graph, dict]:
     """Return a book review graph corresponding to the given datasets and a dictionary mapping laptop to image link.
 
     Preconditions:
-        - reviews_file is the path to a CSV file corresponding to the book review data
-          format described on the assignment handout
-        - book_names_file is the path to a CSV file corresponding to the book data
-          format described on the assignment handout
-        - each book ID in reviews_file exists as a book ID in book_names_file
+        - laptop_data_file is the path to a CSV file corresponding to the laptop data
+        - parameters_file is the path to a JSON file containing parameters to convert to kind
+        - csv file rows contain headings in parameters_file in that order
+        - parameters_file should contain ["processor", "ram", "os", "storage",
+          'display(in inch)', 'name', 'price(in Rs.)']
     """
+    # data cleaning
     df = pd.read_csv(laptop_data_file)
     df = df.drop(columns=['id'])
     df = df.drop_duplicates()
@@ -320,9 +319,9 @@ def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
 
     df = df.drop(columns=['img_link'])
 
+    # create graph
     graph = Graph()
-
-    data_ = _load_data('parameters_data.json')
+    data_ = _load_data(parameters_file)
 
     for index, row in df.iterrows():
 
@@ -339,12 +338,14 @@ def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
                 graph.add_edge((index, "id"), (brand, "processor"))
                 graph.add_edge((index, "id"), (proc_pwr, "processing power"))
             elif k in ["ram", "os", "storage"]:
-                val_ = _convert_val(j, data_[k])
-                graph.add_vertex(val_, k)
-                graph.add_edge((index, "id"), (val_, k))
-            elif k in ['name', 'display(in inch)', 'price(in Rs.)']:
-                if k == 'display(in inch)':
-                    j = str(int(round(float(j), 0)))
+                j = _convert_val(j, data_[k])
+                graph.add_vertex(j, k)
+                graph.add_edge((index, "id"), (j, k))
+            elif k == 'display(in inch)':
+                j = str(int(round(float(j), 0)))
+                graph.add_vertex(j, k)
+                graph.add_edge((index, "id"), (j, k))
+            elif k in ['name', 'price(in Rs.)']:
                 graph.add_vertex(j, k)
                 graph.add_edge((index, "id"), (j, k))
 
@@ -352,6 +353,9 @@ def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
 
 
 if __name__ == "__main__":
+    import doctest
+    import python_ta
+
     doctest.testmod()
     python_ta.check_all(config={
         'extra-imports': [
@@ -363,4 +367,4 @@ if __name__ == "__main__":
         'max-line-length': 120
     })
 
-    python_ta.contracts.check_all_contracts("user_input_form.py")
+    python_ta.contracts.check_all_contracts("graph_class.py")
