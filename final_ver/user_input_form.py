@@ -398,3 +398,22 @@ def load_boxes():
 
     pygame.quit()
     return user_specs
+
+
+if __name__ == "__main__":
+    specs = load_boxes()
+
+    doctest.testmod()
+    python_ta.check_all(config={
+        'extra-imports': [
+            'random',
+            'pygame',
+            'graph_class',
+            'requests',
+            'io'
+        ],
+        'allowed-io': [],
+        'max-line-length': 120
+    })
+
+    contracts.check_all_contracts("user_input_form.py")
