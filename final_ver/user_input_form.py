@@ -3,19 +3,15 @@ CSC111 Project 2 User Input Form
 
 Form to gather information from user about an ideal laptop and display recommendations
 """
-import math
 from random import randint
-from typing import Optional
-
-import pygame
-
-from graph_class import load_laptop_graph, add_dummy
-import requests
 from io import BytesIO
+from typing import Optional
+import pygame
+import math
+import requests
 import doctest
-import python_ta
-
-# import python_ta.contracts as contracts
+import python_ta.contracts
+from graph_class import load_laptop_graph, add_dummy
 
 pygame.init()
 
@@ -182,17 +178,6 @@ class DisplayRecommendations:
         screen. Returns False if the user quit the screen, and returns True to go back to the
         form when back button is pressed."""
 
-        screen_height = 900
-        item_height = 150
-
-        laptop_width = 300
-        laptop_height = 300
-        x_space = 50
-        y_space = 50
-        x_start = 100
-        y_start = 250
-        scroll_speed = 30
-
         running = True
 
         while running:
@@ -207,61 +192,66 @@ class DisplayRecommendations:
                     self.scroll -= event.y * scroll_speed
                     self.scroll = max(0, min(self.scroll, self.total_height - screen_height))
 
-            SCREEN.fill(BG_COLOR)
+            screen.fill(bg_color)
             title_font = pygame.font.Font(None, 30)
-            title_surf = title_font.render("Recommended Laptops", True, WHITE)
-            SCREEN.blit(title_surf, (650, 50 - self.scroll))
+            title_surf = title_font.render("Recommended Laptops", True, white)
+            screen.blit(title_surf, (650, 50 - self.scroll))
 
             primary_laptop = self.recommendations[0]
             primary_rect = pygame.Rect(100, 150 - self.scroll, 600, 400)
-            pygame.draw.rect(SCREEN, COLOR_INACTIVE, primary_rect, 2)
+            pygame.draw.rect(screen, color_inactive, primary_rect, 2)
 
-            name = FONT.render(f"Best Recommendation: {primary_laptop['Name']}", True, WHITE)
-            SCREEN.blit(name, (150, 200 - self.scroll))
+            name = font.render(f"Best Recommendation: {primary_laptop['Name']}", True, white)
+            screen.blit(name, (150, 200 - self.scroll))
 
             y_offset = 240
 
             for spec, value in primary_laptop.items():
                 if spec not in {'Name', 'Image'}:
-                    spec_text = FONT.render(f"{spec}: {value}", True, WHITE)
-                    SCREEN.blit(spec_text, (150, y_offset - self.scroll))
+                    spec_text = font.render(f"{spec}: {value}", True, white)
+                    screen.blit(spec_text, (150, y_offset - self.scroll))
                     y_offset += 50
                 if spec == 'Image':
                     response = requests.get(value)
                     image_data = BytesIO(response.content)
                     img = pygame.image.load(image_data)
                     img = pygame.transform.scale(img, (300, 200))
-                    SCREEN.blit(img, (350, 270 - self.scroll))
+                    screen.blit(img, (350, 270 - self.scroll))
 
-            for i in range(1, limit):
-                for _ in self.recommendations[i]:
-                    row = (int(i) + 1) // 4
-                    col = (int(i) + 1) % 4
-
-                    x = x_start + col * (laptop_width + x_space)
-                    y = y_start + row * (laptop_height + y_space) - self.scroll
-                    if item_height < y < screen_height:
-                        pygame.draw.rect(SCREEN, COLOR_INACTIVE, (x, y, laptop_width, laptop_height))
-                        if len(self.recommendations[i]['Name']) <= 40:
-                            name = FONT.render(f"{self.recommendations[i]['Name']}", True, WHITE)
-                            SCREEN.blit(name, (x + 20, y + 20))
-                        else:
-                            rec_name_first_line = self.recommendations[i]['Name'][:40]
-                            rec_name_second_line = self.recommendations[i]['Name'][40:]
-                            name_1 = FONT.render(f"{rec_name_first_line}", True, WHITE)
-                            name_2 = FONT.render(f"{rec_name_second_line}", True, WHITE)
-                            SCREEN.blit(name_1, (x + 20, y + 20))
-                            SCREEN.blit(name_2, (x + 20, y + 40))
-
-            self.back_button.draw_box()
-
-            pygame.display.flip()
-            pygame.time.Clock().tick(60)
+            self.draw_text(limit)
 
         return False
 
+    def draw_text(self, limit: int) -> None:
+        """Split the text into 2 lines if longer than the box."""
+        for i in range(1, limit):
+            for _ in self.recommendations[i]:
+                row = (int(i) + 1) // 4
+                col = (int(i) + 1) % 4
 
-# LOAD BOX HELPER FUNCTIONS
+                x = x_start + col * (laptop_width + x_space)
+                y = y_start + row * (laptop_height + y_space) - self.scroll
+                if item_height < y < screen_height:
+                    pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
+                    self.split_line(self.recommendations[i]['Name'], x, y)
+
+        self.back_button.draw_box()
+        pygame.display.flip()
+        pygame.time.Clock().tick(60)
+
+    def split_line(self, name: str, x: int, y: int) -> None:
+        """Splits the text into 2 lines if longer than box."""
+        if len(name) <= 40:
+            name_ = font.render(name, True, white)
+            screen.blit(name_, (x + 20, y + 20))
+        else:
+            rec_name_first_line = name[:40]
+            rec_name_second_line = name[40:]
+            name_1 = font.render(f"{rec_name_first_line}", True, white)
+            name_2 = font.render(f"{rec_name_second_line}", True, white)
+            screen.blit(name_1, (x + 20, y + 20))
+            screen.blit(name_2, (x + 20, y + 40))
+
 
 def generate_random_specs(valid_options: list) -> list:
     """Generate a random combination of laptop specs according to what is required"""
@@ -424,6 +414,59 @@ def load_boxes(dummy_laptop_id: int = -1) -> None:
 
 
 if __name__ == "__main__":
+
+    pygame.init()
+
+    clock = pygame.time.Clock()
+    screen = pygame.display.set_mode([1600, 900])
+    font = pygame.font.Font(None, 20)
+
+    color_active = pygame.color.Color(179, 158, 181)
+    color_inactive = pygame.color.Color(80, 80, 80)
+    white = (255, 255, 255)
+    bg_color = (30, 30, 30)
+
+    dummy_laptop_id = -1
+
+    questions = [
+        'What is the minimum price you would pay for a laptop(CAD)? (*)',
+        'What is the maximum price you would pay for a laptop (CAD)? (*)',
+        'Which processor would you like to have? (Intel/AMD/Apple)',
+        'Which processing power would you like to have for the laptop? (Less/Medium/High)',
+        'How much RAM (Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
+        'What Operating System would you like to have? (Mac/Windows/Chrome)',
+        'How much storage (SSD) would you like to have? (128 GB/256 GB/512 GB/1 TB/2 TB)',
+        'Roughly, what display size (in inches) would you like to have? (Integer from 12-17)',
+        'How many laptop recommendations would you like? (Integer from 1-20) (*)'
+    ]
+
+    valid_options = [
+        None,
+        None,  # can be any price
+        ['Intel', 'AMD', 'Apple'],
+        ['Less', 'Medium', 'High'],
+        ['4 GB', '8 GB', '16 GB', '32 GB'],
+        ['Mac', 'Windows', 'Chrome'],
+        ['128 GB', '256 GB', '512 GB', '1 TB', '2 TB'],
+        [str(n) for n in range(12, 18)],
+        [str(i) for i in range(1, 21)]
+    ]
+
+    box_width = 200
+    box_height = 50
+    box_spacing = 100
+
+    screen_height = 900
+    item_height = 150
+
+    laptop_width = 300
+    laptop_height = 300
+    x_space = 50
+    y_space = 50
+    x_start = 100
+    y_start = 250
+    scroll_speed = 30
+
     # specs = load_boxes()
     load_boxes(-1)
 
