@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Optional
 from python_ta.contracts import check_contracts
 import pandas as pd
 
@@ -23,26 +23,43 @@ class _Vertex:
         self.kind = kind
         self.neighbours = set()
 
-    def similarity_score(self, other, price_tolerance: float = 100.0) -> float:
+    def similarity_score(self, other, price_tolerance: float = 100.0,
+                         empty_vertice_kinds: Optional[list[str]] = None) -> float:
         """Return the similarity score between this vertex and other.
         If this vertex has the same item as another vertex, and they are both of the same kind,
+
+        Note that this is coded to only be applicable to vertex of kind 'id'
+
+        Preconditions:
+        - self.kind == 'id'
         """
+        if empty_vertice_kinds is None:
+            empty_vertice_kinds = list()
         if len(self.neighbours) == 0 or len(other.neighbours) == 0:
             return 0
 
-        # temporary fix lol
         s_neighbor_no_price = self.neighbours.copy()
-        s_price = [v for v in self.neighbours if v.kind == "price(in Rs.)"][0]
-        s_neighbor_no_price.remove(s_price)
-
-        s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
-
         o_neighbor_no_price = other.neighbours.copy()
-        o_price = [v for v in other.neighbours if v.kind == "price(in Rs.)"][0]
-        o_name = [v for v in other.neighbours if v.kind == "name"][0]  # dummy laptop has no name btw
-        o_neighbor_no_price.remove(o_price)
-        o_neighbor_no_price.remove(o_name)
 
+        # GET PRICE FROM NEIGHBOURS
+        s_price = [v for v in self.neighbours if v.kind == "price(in Rs.)"][0]
+        o_price = [v for v in other.neighbours if v.kind == "price(in Rs.)"][0]
+
+        s_to_remove = [s_price]
+        o_to_remove = [o_price]
+
+        # EXCLUDE EMPTY VERTICES FOR COUNT todo: attempt partial matching
+        # s_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
+        o_to_remove.extend([v for v in other.neighbours if v.kind in empty_vertice_kinds + ["name"]])
+
+        # REMOVE VERTICES
+        for v in s_to_remove:
+            s_neighbor_no_price.remove(v)
+        for v in o_to_remove:
+            o_neighbor_no_price.remove(v)
+
+        # FINALISE SET TO ONLY CONTAIN ITEMS
+        s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
         o_neighbor_no_price = {v.item for v in o_neighbor_no_price}
 
         # Non price similarity score
@@ -52,7 +69,13 @@ class _Vertex:
         sim_score_price = int(abs(float(s_price.item) - float(o_price.item)) <= price_tolerance)
         # check whether the price falls between the range min_range to max_range
 
-        return numerator / denominator + (sim_score_price * (1 / 8))  # weight for the price is 1/8
+        if numerator == 0 or denominator == 0:
+            return sim_score_price
+        else:
+            factors = 8 - len(empty_vertice_kinds)  # number of total factors: 8
+            # return numerator / denominator + (sim_score_price * (1 / 8))  # weight for the price is 1/8
+            return numerator / denominator + (sim_score_price * (1 / factors))
+            # weight for the price depends on number of factors considered
 
 
 class Graph:
@@ -136,7 +159,8 @@ class Graph:
             raise ValueError
 
     def get_similarity_score(self, item1: tuple[Any, str], item2: tuple[Any, str],
-                             price_tolerance: float = 100.0) -> float:
+                             price_tolerance: float = 100.0,
+                             empty_vertices_kind: Optional[list] = None) -> float:
         """Return the similarity score between the two given items in this graph.
 
         Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
@@ -149,7 +173,7 @@ class Graph:
             v1 = self._vertices[item1]
             v2 = self._vertices[item2]
             # print(f'{item1}: {v1.item}, {item2}: {v2.item}')
-            sim_score = v1.similarity_score(v2, price_tolerance)
+            sim_score = v1.similarity_score(v2, price_tolerance, empty_vertices_kind)
 
             # if sim_score >= 0.4:
             #     print(f'{item1}: {v1.item}, {item2}: {v2.item}, sim_score: {sim_score}')
@@ -157,14 +181,16 @@ class Graph:
             return sim_score
             # return v1.similarity_score(v2, price_tolerance)
 
-    def recommended_laptops(self, specs_: int, limit: int, price_tolerance: float) -> list:
+    def recommended_laptops(self, specs_: int, limit: int, price_tolerance: float,
+                            empty_vertices_kind: Optional[list] = None) -> list:
         """Get recommended laptops"""
         recommended_dict = {}
 
         for vertex in self._vertices:
             vertex_obj = self._vertices[vertex]
             if vertex != specs_ and vertex_obj.kind == 'id' and vertex[0] >= 0:
-                similarity_score = self.get_similarity_score((specs_, "id"), vertex, price_tolerance)
+                similarity_score = self.get_similarity_score((specs_, "id"), vertex, price_tolerance,
+                                                             empty_vertices_kind)
                 if similarity_score > 0:
                     recommended_dict[vertex] = similarity_score + (self._ratings[vertex[0]] / 5 * (1 / 8))
 

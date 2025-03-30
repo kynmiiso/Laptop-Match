@@ -11,7 +11,7 @@ import requests
 from io import BytesIO
 from python_ta.contracts import check_contracts
 
-from main import Graph, load_laptop_graph
+# from main import Graph, load_laptop_graph
 
 pygame.init()
 
@@ -24,16 +24,18 @@ color_inactive = pygame.color.Color(80, 80, 80)
 white = (255, 255, 255)
 bg_color = (30, 30, 30)
 
+DUMMY_LAPTOP_ID = -1
+
 questions = [
-    'What is the minimum price you would pay for a laptop(CAD)?',
-    'What is the maximum price you would pay for a laptop (CAD)?',
+    'What is the minimum price you would pay for a laptop(CAD)? (*)',
+    'What is the maximum price you would pay for a laptop (CAD)? (*)',
     'Which processor would you like to have? (Intel/AMD/Apple)',
     'Which processing power would you like to have for the laptop? (Less/Medium/High)',
     'How much RAM (Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
     'What Operating System would you like to have? (Mac/Windows/Chrome)',
     'How much storage (SSD) would you like to have? (128 GB/256 GB/512 GB/1 TB/2 TB)',
     'Roughly, what display size (in inches) would you like to have? (Integer from 12-17)',
-    'How many laptop recommendations would you like? (Integer from 1-20)'
+    'How many laptop recommendations would you like? (Integer from 1-20) (*)'
 ]
 
 valid_options = [
@@ -98,7 +100,7 @@ class InputBox:
             return True
 
         for lst in self.valid_options:
-            print(f'{self.text.strip().lower()} == {lst.strip().lower()}')
+            # print(f'{self.text.strip().lower()} == {lst.strip().lower()}')
             if isinstance(lst, str) and self.text.strip().lower() == lst.strip().lower():
                 return True
         return False
@@ -113,19 +115,19 @@ class Button:
         self.specs = {}  # will include final data
         self.button_text = button_text
 
-    def event_handler(self, event, input_boxes: list):
-        """Handles the events occurring in the main loop"""
-
-        if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
-            for box in input_boxes:
-                if box[0].text > box[1].text:
-                    return None
-                if not box.check_validity():
-                    return None
-            for i, box in enumerate(input_boxes):
-                self.specs[questions[i]] = box.text
-            return self.specs
-        return None
+    # def event_handler(self, event, input_boxes: list):
+    #     """Handles the events occurring in the main loop"""
+    #
+    #     if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+    #         for box in input_boxes:
+    #             if box[0].text > box[1].text:
+    #                 return None
+    #             if not box.check_validity():
+    #                 return None
+    #         for i, box in enumerate(input_boxes):
+    #             self.specs[questions[i]] = box.text
+    #         return self.specs
+    #     return None
 
     def draw_box(self):
         """Draws the input box and text"""
@@ -243,6 +245,7 @@ class DisplayRecommendations:
 def load_boxes():
     """Loads text input boxes to get user input about specs for laptop.
     """
+    global DUMMY_LAPTOP_ID
     pygame.init()
     form_screen = pygame.display.set_mode([1600, 900])
     pygame.display.set_caption("Laptop Recommendation Form")
@@ -267,7 +270,7 @@ def load_boxes():
     exit_button = Button(1050, 700, box_width, box_height, "Exit")
 
     # todo: addition
-    sample_specs = Button(500, 700, box_width, box_height, "Sample")
+    sample_specs = Button(150, 700, box_width, box_height, "Sample")
 
     run = True
     user_specs = None
@@ -309,11 +312,17 @@ def load_boxes():
 
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid = True
-                for box in input_boxes:
+                filled = 0
+                for i, box in enumerate(input_boxes):
+                    # todo: attempt partial matching
+                    if box.text == '' and i != 8:
+                        continue
+
                     try:
                         if not box.check_validity():
                             all_valid = False
                             error_message = "Please enter a valid input from the options in brackets in all fields!"
+                            # error_message = "Please ensure you input a valid price range and number of results"
                         elif float(input_boxes[0].text) > float(input_boxes[1].text):
                             all_valid = False
                             error_message = "Budget cannot be more than max price!"
@@ -321,9 +330,26 @@ def load_boxes():
                         all_valid = False
                         error_message = "Please enter only numbers in the prices fields!"
 
-                if all_valid:
+                    filled += 1
+
+                # todo: attempt partial matching
+                enable_partial_matching = (filled > 2 and
+                                           all(b.text != '' for b in input_boxes[0:2]) and
+                                           input_boxes[8].text != '')
+                # note that price values will be checked in previous try-except
+
+                empty_boxes = []
+                data_q = ['min_price', 'max_price', 'processor', 'processing power',
+                          'ram', 'os', 'storage', 'display(in inch)', 'limit']
+
+                if all_valid and enable_partial_matching:
                     user_specs = {}
                     for i, box in enumerate(input_boxes):
+                        # todo: attempt partial matching
+                        if box.text == '':
+                            empty_boxes.append(data_q[i])
+                            continue
+
                         if valid_options[i] is None:
                             user_specs[i] = float(box.text)
                         elif isinstance(valid_options[i], tuple):
@@ -331,14 +357,21 @@ def load_boxes():
                         else:
                             user_specs[i] = box.text
                     if user_specs:
-
-                        lim_key = list(user_specs)[8]
-                        lim = int(user_specs[lim_key])
+                        # lim_key = list(user_specs)[8]
+                        # lim = int(user_specs[lim_key])
+                        lim = int(user_specs[8])  # todo: practicality update
                         graph, img_links = load_laptop_graph('laptops.csv')
-                        price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
-                        dummy_laptop_id = -1
-                        add_dummy(graph, user_specs)
-                        recs_id_list = graph.recommended_laptops(dummy_laptop_id, lim, price_tolerence)
+                        # price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
+                        price_tolerence = (float(user_specs[1]) - float(user_specs[0])) / 2  # todo: practicality update
+                        add_dummy(graph, user_specs, DUMMY_LAPTOP_ID)
+
+                        # todo: DEBUG
+                        print(f'added dummy laptop [{DUMMY_LAPTOP_ID}]')
+                        print(f'getting recommended laptops [{DUMMY_LAPTOP_ID}]: '
+                              f'({DUMMY_LAPTOP_ID}, {lim}, {price_tolerence})')
+
+                        recs_id_list = graph.recommended_laptops(DUMMY_LAPTOP_ID, lim, price_tolerence, empty_boxes)
+                        DUMMY_LAPTOP_ID -= 1  # reduce DUMMY LAPTOP ID every time we send a new laptop in
                         recs = graph.id_to_rec(recs_id_list, lim, img_links)
                         go_back = DisplayRecommendations(recs).display_recs(lim)
                         if not go_back:
@@ -356,6 +389,11 @@ def load_boxes():
 
             # todo: addition
             sample_specs.draw_box()
+
+            # todo: HOW TO
+            how_to = font.render("Enter a proper value for the required fields marked (*)", True,
+                                 (255, 255, 255))
+            form_screen.blit(how_to, (150, 800))
 
             if error_message and show_error:
                 error_surf = font.render(error_message, True, (255, 0, 0))  # Red for errors

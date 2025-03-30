@@ -338,7 +338,14 @@ def load_boxes():
 
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid = True
+                filled = 0
                 for box in input_boxes:
+                    # todo: attempt partial matching
+                    if box.text != '':
+                        filled += 1
+                    else:
+                        continue
+
                     try:
                         if not box.check_validity():
                             all_valid = False
@@ -350,23 +357,40 @@ def load_boxes():
                         all_valid = False
                         error_message = "Please enter only numbers in the prices fields!"
 
-                if all_valid:
+                # todo: attempt partial matching
+                enable_partial_matching = (filled > 2 and
+                                           all(b.text != '' for b in input_boxes[0:2]) and
+                                           input_boxes[8].text != '')
+                # note that price values will be checked in previous try-except
+
+                empty_boxes = []
+                data_q = ['min_price', 'max_price', 'processor', 'processing power',
+                          'ram', 'os', 'storage', 'display(in inch)', 'limit']
+
+                if all_valid and enable_partial_matching:
                     user_specs = {}
                     for i, box in enumerate(input_boxes):
+                        # todo: attempt partial matching
+                        if box.text == '':
+                            empty_boxes.append(data_q[i])
+                            continue
+
                         if valid_options[i] is None:
                             user_specs[i] = float(box.text)
                         elif isinstance(valid_options[i], tuple):
                             user_specs[i] = float(box.text)
                         else:
                             user_specs[i] = box.text
-                    if user_specs:
 
-                        lim_key = list(user_specs)[8]
-                        lim = int(user_specs[lim_key])
+                    if user_specs:
+                        # lim_key = list(user_specs)[8]
+                        # lim = int(user_specs[lim_key])
+                        lim = int(user_specs[8])  # todo: practicality update
                         graph, img_links = load_laptop_graph('../laptops.csv')
-                        price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
+                        # price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
+                        price_tolerence = (float(user_specs[1]) - float(user_specs[0]))/2  # todo: practicality update
                         add_dummy(graph, user_specs, DUMMY_LAPTOP_ID)
-                        recs_id_list = graph.recommended_laptops(DUMMY_LAPTOP_ID, lim, price_tolerence)
+                        recs_id_list = graph.recommended_laptops(DUMMY_LAPTOP_ID, lim, price_tolerence, empty_boxes)
                         DUMMY_LAPTOP_ID -= 1
                         recs = graph.id_to_rec(recs_id_list, lim, img_links)
                         go_back = DisplayRecommendations(recs).display_recs(lim)
