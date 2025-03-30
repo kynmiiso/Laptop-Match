@@ -9,7 +9,9 @@ import pygame
 from main import load_laptop_graph, add_dummy
 import requests
 from io import BytesIO
-from python_ta.contracts import check_contracts
+import doctest
+import python_ta
+import python_ta.contracts as contracts
 
 from main import Graph, load_laptop_graph
 
@@ -224,13 +226,6 @@ class DisplayRecommendations:
                             name_2 = font.render(f"{rec_name_second_line}", True, white)
                             screen.blit(name_1, (x + 20, y + 20))
                             screen.blit(name_2, (x + 20, y + 40))
-                    if 'Image' in self.recommendations[i]:
-                        response = requests.get(self.recommendations[i]['Image'])
-                        if response.status_code == 200:
-                            image_data = BytesIO(response.content)
-                            img = pygame.image.load(image_data)
-                            img = pygame.transform.scale(img, (150, 100))
-                            screen.blit(img, (x + 65, y + 50))
 
             self.back_button.draw_box()
 
@@ -243,6 +238,7 @@ class DisplayRecommendations:
 def load_boxes():
     """Loads text input boxes to get user input about specs for laptop.
     """
+
     pygame.init()
     form_screen = pygame.display.set_mode([1600, 900])
     pygame.display.set_caption("Laptop Recommendation Form")
@@ -381,7 +377,11 @@ if __name__ == "__main__":
 
     specs = load_boxes()
 
-    # if specs:
-    #     print(specs)
-    # else:
-    #     print("Form was closed without submission.")
+    doctest.testmod()
+    python_ta.check_all(config={
+        'extra-imports': [],
+        'allowed-io': [],
+        'max-line-length': 120
+    })
+
+    contracts.check_all_contracts("user_input_form.py")
