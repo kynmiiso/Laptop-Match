@@ -3,11 +3,11 @@ CSC111 Project 2 User Input Form
 
 Form to gather information from user about an ideal laptop and display recommendations
 """
+import math
 from random import randint
 from typing import Optional
 
 import pygame
-from numpy.ma.core import empty
 
 from graph_class import load_laptop_graph, add_dummy
 import requests
@@ -222,7 +222,7 @@ class DisplayRecommendations:
             y_offset = 240
 
             for spec, value in primary_laptop.items():
-                if spec != 'Name' and spec != 'Image':
+                if spec not in {'Name', 'Image'}:
                     spec_text = FONT.render(f"{spec}: {value}", True, WHITE)
                     SCREEN.blit(spec_text, (150, y_offset - self.scroll))
                     y_offset += 50
@@ -318,7 +318,6 @@ def get_user_specs(input_boxes: list[InputBox]) -> tuple[dict, list]:
     empty_boxes = []
     user_specs = {}
     for i, box in enumerate(input_boxes):
-        # todo: attempt partial matching
         if box.text == '':
             empty_boxes.append(DATA_Q[i])
             continue
@@ -333,50 +332,46 @@ def get_user_specs(input_boxes: list[InputBox]) -> tuple[dict, list]:
     return user_specs, empty_boxes
 
 
-def submit(all_valid: bool, input_boxes: list[InputBox]):
+def submit(all_valid: bool, input_boxes: list[InputBox], dummy_laptop_id: int = -1) -> None:
     """submit all info"""
     if not all_valid:
         return
 
-    global DUMMY_LAPTOP_ID
     if all_valid:
         user_specs, empty_boxes = get_user_specs(input_boxes)
-        assert all(i in list(user_specs.keys()) for i in [0, 1, 8])
-        lim = int(user_specs[8])  # todo: practicality update
+        assert all(i in user_specs for i in [0, 1, 8])
+        lim = int(user_specs[8])
         graph, img_links = load_laptop_graph('laptops.csv', 'parameters_data.json')
         # price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
-        price_tolerence = (float(user_specs[1]) - float(user_specs[0])) / 2  # todo: practicality update
-        add_dummy(graph, user_specs, DUMMY_LAPTOP_ID)
+        price_tolerence = (float(user_specs[1]) - float(user_specs[0])) / 2
+        add_dummy(graph, user_specs, dummy_laptop_id)
 
-        recs_id_list = graph.recommended_laptops(DUMMY_LAPTOP_ID, lim, price_tolerence, empty_boxes)
-        DUMMY_LAPTOP_ID -= 1  # reduce DUMMY LAPTOP ID every time we send a new laptop in
+        recs_id_list = graph.recommended_laptops(dummy_laptop_id, lim, price_tolerence, empty_boxes)
+        # dummy_laptop_id -= 1  # reduce DUMMY LAPTOP ID every time we send a new laptop in
         recs = graph.id_to_rec(recs_id_list, lim, img_links)
         _ = DisplayRecommendations(recs).display_recs(lim)
 
 
-def load_boxes() -> None:
+def load_boxes(dummy_laptop_id: int = -1) -> None:
     """Loads text input boxes to get user input about specs for laptop. Returns the user's preferred specifications
      for the laptop from the input."""
 
-    global DUMMY_LAPTOP_ID
     pygame.init()
     form_screen = pygame.display.set_mode([1600, 900])
     pygame.display.set_caption("Laptop Recommendation Form")
 
     input_boxes = []
 
-    half = len(QUESTIONS) // 2
-    if len(QUESTIONS) % 2 != 0:
-        half += 1
+    # half = math.ceil(len(QUESTIONS) / 2)
 
-    for i in range(half):
+    for i in range(math.ceil(len(QUESTIONS) / 2)):
         x = 100
         y = 100 + i * BOX_SPACING
         input_boxes.append(InputBox((x, y, BOX_WIDTH, BOX_HEIGHT), QUESTIONS[i], VALID_OPTIONS[i]))
 
-    for i in range(half, len(QUESTIONS)):
+    for i in range(math.ceil(len(QUESTIONS) / 2), len(QUESTIONS)):
         x = 800
-        y = 100 + (i - half) * BOX_SPACING
+        y = 100 + (i - math.ceil(len(QUESTIONS) / 2)) * BOX_SPACING
         input_boxes.append(InputBox((x, y, BOX_WIDTH, BOX_HEIGHT), QUESTIONS[i], VALID_OPTIONS[i]))
 
     submit_button = Button((800, 700, BOX_WIDTH, BOX_HEIGHT), "Submit")
@@ -407,7 +402,8 @@ def load_boxes() -> None:
 
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid, error_message = verify(input_boxes)
-                submit(all_valid, input_boxes)
+                submit(all_valid, input_boxes, dummy_laptop_id)
+                dummy_laptop_id -= 1
 
             form_screen.fill(BG_COLOR)
             for box in input_boxes:
@@ -419,24 +415,17 @@ def load_boxes() -> None:
 
             form_screen.blit(FONT.render("Enter a proper value for the required fields marked (*)", True,
                                          (255, 255, 255)), (150, 800))
-
-            # if error_message and show_error:
-            #     error_surf = FONT.render(error_message, True, (255, 0, 0))  # Red for errors
-            #     form_screen.blit(error_surf, (800, 750))
-
-            # error_surf = FONT.render(error_message, True, (255, 0, 0))  # Red for errors
             form_screen.blit(FONT.render(error_message, True, (255, 0, 0)), (800, 750))
 
             pygame.display.flip()
             CLOCK.tick(60)
 
     pygame.quit()
-    # return user_specs
 
 
 if __name__ == "__main__":
     # specs = load_boxes()
-    load_boxes()
+    load_boxes(-1)
 
     doctest.testmod()
     python_ta.check_all(config={
@@ -445,7 +434,8 @@ if __name__ == "__main__":
             'pygame',
             'graph_class',
             'requests',
-            'io'
+            'io',
+            'math'  # only for ceiling function lol soz
         ],
         'allowed-io': [],
         'max-line-length': 120

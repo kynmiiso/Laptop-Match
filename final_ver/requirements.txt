@@ -7,3 +7,4 @@ typing
 io
 python_ta
 doctest
+math
