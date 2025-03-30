@@ -267,7 +267,7 @@ def _load_data(filename: str) -> dict:
     return grouped_data
 
 
-def load_laptop_graph(laptop_data_file: str) -> Graph:
+def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
     """Return a book review graph corresponding to the given datasets.
 
     Preconditions:
@@ -286,6 +286,9 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     # print(df)
     df = df.reset_index()
     df = df.drop(columns=['index'])
+
+    img_links = {index: row['img_link'] for index, row in df.reset_index().iterrows()}
+
     df = df.drop(columns=['img_link'])
 
     graph = Graph()
@@ -316,7 +319,7 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
                 graph.add_vertex(j, k)
                 graph.add_edge((index, "id"), (j, k))
 
-    return graph
+    return graph, img_links
 
 #
 # if __name__ == "__main__":

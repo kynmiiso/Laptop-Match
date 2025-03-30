@@ -12,6 +12,14 @@ def load_image_links(csv_file: str):
     Returns:
         Dictionary mapping laptop index (ID) to image URL
     """
+    """Loads images from the csv file"""
+    from typing import Dict
+    import pandas as pd
+
     df = pd.read_csv(csv_file)
+    img_links = {}
+
     for _, row in df.reset_index().iterrows():
-        return {int(row['index']): row['img_link']}
+        img_links[int(row['index'])] = row['img_link']
+
+    return img_links

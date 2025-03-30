@@ -8,6 +8,7 @@ import pygame
 from image_loader import load_image_links
 from main import load_laptop_graph, add_dummy
 import requests
+from io import BytesIO
 
 pygame.init()
 
@@ -21,8 +22,8 @@ white = (255, 255, 255)
 bg_color = (30, 30, 30)
 
 questions = [
-    'What is your budget for a laptop(CAD)?',
-    'What is your maximum price for a laptop (CAD)?',
+    'What is the minimum price you would pay for a laptop(CAD)?',
+    'What is the maximum price you would pay for a laptop (CAD)?',
     'Which processor would you like to have? (Intel/AMD/Apple)',
     'Which processing power would you like to have for the laptop? (Less/Medium/High)',
     'How much RAM (Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
@@ -137,8 +138,8 @@ class DisplayRecommendations:
     def __init__(self, recommendations):
         self.recommendations = recommendations
         self.scroll = 0
-        self.back_button = Button(1200, 100 - self.scroll, box_width, box_height, "Go to Form")
-        self.total_height = len(recommendations) * 120
+        self.back_button = Button(1200, 75 - self.scroll, box_width, box_height, "Go to Form")
+        self.total_height = len(recommendations) * 150
 
     def display_recs(self, limit: int):
         """Draw the recommendations on screen, for a number of laptops within the limit, including
@@ -181,31 +182,52 @@ class DisplayRecommendations:
                 continue
 
             primary_laptop = self.recommendations[0]
-            primary_rect = pygame.Rect(200, 100 - self.scroll, 500, 400)
+            primary_rect = pygame.Rect(100, 150 - self.scroll, 600, 400)
             pygame.draw.rect(screen, color_inactive, primary_rect, 2)
 
-            name = font.render(f"{primary_laptop['Name']}", True, white)
-            screen.blit(name, (220, 120 - self.scroll))
+            name = font.render(f"Best Recommendation: {primary_laptop['Name']}", True, white)
+            screen.blit(name, (150, 200 - self.scroll))
 
-            y_offset = 170
+            y_offset = 240
 
             for spec, value in primary_laptop.items():
-                if spec != 'Name':
+                if spec != 'Name' and spec != 'Image':
                     spec_text = font.render(f"{spec}: {value}", True, white)
-                    screen.blit(spec_text, (220, y_offset - self.scroll))
+                    screen.blit(spec_text, (150, y_offset - self.scroll))
                     y_offset += 50
+                if spec == 'Image':
+                    response = requests.get(value)
+                    image_data = BytesIO(response.content)
+                    img = pygame.image.load(image_data)
+                    img = pygame.transform.scale(img, (300, 200))
+                    screen.blit(img, (350, 270 - self.scroll))
 
             for i in range(1, limit):
                 for _ in self.recommendations[i]:
-                    row = (int(i) + 3) // 4
+                    row = (int(i) + 1) // 4
                     col = (int(i) + 1) % 4
 
                     x = x_start + col * (laptop_width + x_space)
                     y = y_start + row * (laptop_height + y_space) - self.scroll
                     if item_height < y < screen_height:
                         pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
-                        name = font.render(f"{self.recommendations[i]['Name']}", True, white)
-                        screen.blit(name, (x + 20, y + 20))
+                        if len(self.recommendations[i]['Name']) <= 40:
+                            name = font.render(f"{self.recommendations[i]['Name']}", True, white)
+                            screen.blit(name, (x + 20, y + 20))
+                        else:
+                            rec_name_first_line = self.recommendations[i]['Name'][:40]
+                            rec_name_second_line = self.recommendations[i]['Name'][40:]
+                            name_1 = font.render(f"{rec_name_first_line}", True, white)
+                            name_2 = font.render(f"{rec_name_second_line}", True, white)
+                            screen.blit(name_1, (x + 20, y + 20))
+                            screen.blit(name_2, (x + 20, y + 40))
+                    if 'Image' in self.recommendations[i]:
+                        response = requests.get(self.recommendations[i]['Image'])
+                        if response.status_code == 200:
+                            image_data = BytesIO(response.content)
+                            img = pygame.image.load(image_data)
+                            img = pygame.transform.scale(img, (150, 100))
+                            screen.blit(img, (x + 65, y + 50))
 
             self.back_button.draw_box()
 
@@ -264,12 +286,16 @@ def load_boxes():
             if event.type == pygame.MOUSEBUTTONDOWN and submit_button.rect.collidepoint(event.pos):
                 all_valid = True
                 for box in input_boxes:
-                    if not box.check_validity():
+                    try:
+                        if not box.check_validity():
+                            all_valid = False
+                            error_message = "Please enter a valid input from the options in brackets in all fields!"
+                        elif float(input_boxes[0].text) > float(input_boxes[1].text):
+                            all_valid = False
+                            error_message = "Budget cannot be more than max price!"
+                    except ValueError:
                         all_valid = False
-                        error_message = "Please enter a valid input from the options in brackets in all fields!"
-                    elif float(input_boxes[0].text) > float(input_boxes[1].text):
-                        all_valid = False
-                        error_message = "Budget cannot be more than max price!"
+                        error_message = "Please enter only numbers in the prices fields!"
 
                 if all_valid:
                     user_specs = {}
@@ -284,12 +310,11 @@ def load_boxes():
 
                         lim_key = list(user_specs)[8]
                         lim = int(user_specs[lim_key])
-                        graph = load_laptop_graph('laptops.csv')
+                        graph, img_links = load_laptop_graph('laptops.csv')
                         price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
                         dummy_laptop_id = -1
                         add_dummy(graph, user_specs)
                         recs_id_list = graph.recommended_laptops(dummy_laptop_id, lim, price_tolerence)
-                        img_links = load_image_links('laptops.csv')
                         recs = graph.id_to_rec(recs_id_list, lim, img_links)
                         go_back = DisplayRecommendations(recs).display_recs(lim)
                         if not go_back:
@@ -317,7 +342,7 @@ def load_boxes():
 
 
 if __name__ == "__main__":
-    g = load_laptop_graph("laptops.csv")
+    g = load_laptop_graph("laptops.csv")[0]
 
     # op = g.recommended_laptops(-1, limit, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
     # # TODO: forward to output screen
