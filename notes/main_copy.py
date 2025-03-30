@@ -1,8 +1,10 @@
-"""practically a copy"""
-import json
-from pprint import pprint
-from typing import Any
+"""CSC111 Project 2 | Laptop Recommendation System"""
 
+from __future__ import annotations
+
+import json
+from typing import Any
+from python_ta.contracts import check_contracts
 import pandas as pd
 
 
@@ -12,7 +14,7 @@ class _Vertex:
     """
     item: Any
     kind: str
-    neighbours: set
+    neighbours: set[_Vertex]
 
     def __init__(self, item: Any, kind: str) -> None:
         """Initialize a new vertex with the given item and kind.
@@ -25,9 +27,6 @@ class _Vertex:
         """Return the similarity score between this vertex and other.
         If this vertex has the same item as another vertex, and they are both of the same kind,
         """
-
-        # TODO (Consideration) what if we mimic Ex 4 in terms of using weighted graphs
-
         if len(self.neighbours) == 0 or len(other.neighbours) == 0:
             return 0
 
@@ -36,15 +35,21 @@ class _Vertex:
         s_price = [v for v in self.neighbours if v.kind == "price(in Rs.)"][0]
         s_neighbor_no_price.remove(s_price)
 
+        s_neighbor_no_price = {v.item for v in s_neighbor_no_price}
+
         o_neighbor_no_price = other.neighbours.copy()
         o_price = [v for v in other.neighbours if v.kind == "price(in Rs.)"][0]
+        o_name = [v for v in other.neighbours if v.kind == "name"][0]  # dummy laptop has no name btw
         o_neighbor_no_price.remove(o_price)
+        o_neighbor_no_price.remove(o_name)
+
+        o_neighbor_no_price = {v.item for v in o_neighbor_no_price}
 
         # Non price similarity score
         numerator = len(s_neighbor_no_price.intersection(o_neighbor_no_price))
         denominator = len(s_neighbor_no_price.union(o_neighbor_no_price))
 
-        sim_score_price = int(abs(s_price.item - o_price.item) <= price_tolerance)
+        sim_score_price = int(abs(float(s_price.item) - float(o_price.item)) <= price_tolerance)
         # check whether the price falls between the range min_range to max_range
 
         return numerator / denominator + (sim_score_price * (1 / 8))  # weight for the price is 1/8
@@ -66,17 +71,18 @@ class Graph:
         self._vertices = {}
         self._ratings = {}
 
-    def add_vertex(self, item: Any, type_: str) -> None:
+    def add_vertex(self, item: Any, kind: str) -> None:
         """Add a vertex with the given item and kind to this graph.
 
         The new vertex is not adjacent to any other vertices.
         Do nothing if the given item is already in this graph.
 
         Preconditions:
-            - kind in {'user', 'book'}
+            - kind in {'name', 'price', 'processor', 'ram', 'os',
+        'storage', 'display size', 'rating'}
         """
         if item not in self._vertices:
-            self._vertices[(item, type_)] = _Vertex(item, type_)
+            self._vertices[(item, kind)] = _Vertex(item, kind)
 
     def add_edge(self, item1: tuple[Any, str], item2: tuple[Any, str]) -> None:
         """Add an edge between the two vertices with the given items in this graph.
@@ -94,6 +100,18 @@ class Graph:
             v2.neighbours.add(v1)
         else:
             raise ValueError
+
+    def remove_vertex(self, item, kind) -> None:
+        """remove"""
+        if (item, kind) not in self._vertices:
+            raise ValueError
+
+        v1 = self._vertices[(item, kind)]
+        for u in v1.neighbours:
+            _ = u.neighbours.remove(v1)
+            _ = v1.neighbours.remove(u)
+
+        self._vertices.pop((item, kind))
 
     def add_rating(self, id_: Any, rating: float) -> None:
         """Adds a rating to the graph"""
@@ -123,15 +141,19 @@ class Graph:
 
         Raise a ValueError if item1 or item2 do not appear as vertices in this graph.
         """
-
+        # print(f"{item1}: {item2}")
+        # print(f'{item1 in self._vertices}, {item2 in self._vertices}')
         if item1 not in self._vertices or item2 not in self._vertices:
             raise ValueError
         else:
             v1 = self._vertices[item1]
             v2 = self._vertices[item2]
-            print(v1.item, v2.item)
+            # print(f'{item1}: {v1.item}, {item2}: {v2.item}')
             sim_score = v1.similarity_score(v2, price_tolerance)
-            print(v1.item, v2.item, sim_score)
+
+            # if sim_score >= 0.4:
+            #     print(f'{item1}: {v1.item}, {item2}: {v2.item}, sim_score: {sim_score}')
+
             return sim_score
             # return v1.similarity_score(v2, price_tolerance)
 
@@ -141,16 +163,73 @@ class Graph:
 
         for vertex in self._vertices:
             vertex_obj = self._vertices[vertex]
-            if vertex != specs_ and vertex_obj.kind == 'id':
+            if vertex != specs_ and vertex_obj.kind == 'id' and vertex[0] >= 0:
                 similarity_score = self.get_similarity_score((specs_, "id"), vertex, price_tolerance)
                 if similarity_score > 0:
-                    recommended_dict[vertex] = similarity_score + (self._ratings[vertex] / 5 * (1 / 8))
+                    recommended_dict[vertex] = similarity_score + (self._ratings[vertex[0]] / 5 * (1 / 8))
 
         recommended_list = [(recommended_dict[laptop_id], laptop_id) for laptop_id in recommended_dict]
         recommended_list.sort(reverse=True)
-        recs = [i[1] for i in recommended_list[0:limit]]
+        recs = [i[1][0] for i in recommended_list[0:limit]]
 
         return recs
+
+    def id_to_rec(self, recs_ids: list, limit: int, img_links: dict) -> dict:
+        """Converts id list to recommendation data with image links."""
+        recommendations = {}
+
+        for i, laptop_id in enumerate(recs_ids[:limit]):
+            neighbors = self.get_neighbours(laptop_id, "id")
+
+            name = neighbors.get("name")
+
+            data = ["price(in Rs.)", "processor", "ram", "storage", "display(in inch)"]
+
+            recommendations[i] = {
+                'Name': name,
+                'Price': neighbors.get(data[0]),
+                'Processor': neighbors.get(data[1]),
+                'RAM': neighbors.get(data[2]),
+                'Storage': neighbors.get(data[3]),
+                'Display': neighbors.get(data[4]),
+                'Rating': self._ratings.get(laptop_id),
+                'Image': img_links.get(laptop_id)
+            }
+
+        return recommendations
+
+
+def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1):
+    """Inject dummy laptop into graph"""
+    data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
+
+    g.add_vertex(dummy_id, 'id')
+    tot_price = 0
+    # diff = 0
+
+    if specs_dict is not None:
+        # limit_key = list(specs_dict)[8]
+        # limit = int(specs_dict[limit_key])
+        for ques, ans in specs_dict.items():
+            print(f"{ques}: {ans}")
+
+            # create price vertex
+            if ques == 0:
+                tot_price += float(ans)
+                continue
+            elif ques == 1:
+                tot_price += float(ans)
+                val = tot_price / 2
+                # diff = float(ans) - val
+                g.add_vertex(val, 'price(in Rs.)')
+                g.add_edge((dummy_id, "id"), (val, 'price(in Rs.)'))
+                # for similarity score, we get range which is mean_price +- diff
+            elif 2 <= ques < len(data):
+                val = data[ques].lower().strip()
+                g.add_vertex(ans, val)
+                g.add_edge((dummy_id, "id"), (ans, val))
+            else:
+                continue
 
 
 def _convert_split(s: str, mapping: dict):
@@ -197,7 +276,7 @@ def _load_data(filename: str) -> dict:
     return grouped_data
 
 
-def load_laptop_graph(laptop_data_file: str) -> Graph:
+def load_laptop_graph(laptop_data_file: str) -> tuple[Graph, dict]:
     """Return a book review graph corresponding to the given datasets.
 
     Preconditions:
@@ -206,11 +285,7 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
         - book_names_file is the path to a CSV file corresponding to the book data
           format described on the assignment handout
         - each book ID in reviews_file exists as a book ID in book_names_file
-
     """
-    # TODO
-    spotlight = [15, 16, 35, 62, 196, 220, 235, 249, 272, 285, 333, 347, 352, 397, 446, 450, 477, 508, 514]
-
     df = pd.read_csv(laptop_data_file)
     df = df.drop(columns=['id'])
     df = df.drop_duplicates()
@@ -220,61 +295,37 @@ def load_laptop_graph(laptop_data_file: str) -> Graph:
     # print(df)
     df = df.reset_index()
     df = df.drop(columns=['index'])
+
+    img_links = {index: row['img_link'] for index, row in df.reset_index().iterrows()}
+
     df = df.drop(columns=['img_link'])
 
     graph = Graph()
 
     data_ = _load_data('../parameters_data.json')
 
-    # todo
-    # pprint(data_)
-    print(data_.keys())
-
     for index, row in df.iterrows():
-        # todo
-        if index in spotlight:
-            print(index, row['name'])
 
         graph.add_vertex(index, 'id')
         graph.add_rating(index, row['rating'])
 
         for k in data_:
-            j = row[k]
+            # print(type(row[k]), row[k])
+            j = str(row[k]).lower().strip()
             if k == "processor":
                 brand, proc_pwr = _convert_split(j, data_[k])
                 graph.add_vertex(brand, "processor")
                 graph.add_vertex(proc_pwr, "processing power")
-
-                # todo
-                # if index in spotlight:
-                #     print(f'{index} Processor: {brand}, Processing power: {proc_pwr}')
-
                 graph.add_edge((index, "id"), (brand, "processor"))
                 graph.add_edge((index, "id"), (proc_pwr, "processing power"))
             elif k in ["ram", "os", "storage"]:
                 val_ = _convert_val(j, data_[k])
                 graph.add_vertex(val_, k)
-
-                # todo
-                # if index in spotlight:
-                #     print(f'{index} {k.upper()}: {val_}')
-
                 graph.add_edge((index, "id"), (val_, k))
-            elif k in ['name', 'display(in inch)', 'price(in Rs.)']:  # todo: issue is here
+            elif k in ['name', 'display(in inch)', 'price(in Rs.)']:
+                if k == 'display(in inch)':
+                    j = str(int(round(float(j), 0)))
                 graph.add_vertex(j, k)
-
-                # todo
-                if index in spotlight:
-                    # print(f'{index} {k}: {j}')
-                    print(f'graph.add_vertex(item="{j}", type_="{k}")')
-
                 graph.add_edge((index, "id"), (j, k))
 
-                # todo sflhdslkhfdslkfsfdlk
-                if index in spotlight:
-                    print(f'graph.add_edge(item1="{index}", item2="{j}")')
-
-        if index in spotlight:  # todo
-            print(f'---')
-
-    return graph
+    return graph, img_links

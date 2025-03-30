@@ -3,15 +3,15 @@ CSC111 Project 2 User Input Form
 
 Form to gather information from user about an ideal laptop and display recommendations
 """
-from random import randint
 
 import pygame
-from main import load_laptop_graph, add_dummy
+from main_copy import load_laptop_graph, add_dummy
 import requests
 from io import BytesIO
 from python_ta.contracts import check_contracts
 
-from main import Graph, load_laptop_graph
+# todo addition
+from random import randint
 
 pygame.init()
 
@@ -24,6 +24,8 @@ color_inactive = pygame.color.Color(80, 80, 80)
 white = (255, 255, 255)
 bg_color = (30, 30, 30)
 
+DUMMY_LAPTOP_ID = -1
+
 questions = [
     'What is the minimum price you would pay for a laptop(CAD)?',
     'What is the maximum price you would pay for a laptop (CAD)?',
@@ -35,6 +37,12 @@ questions = [
     'Roughly, what display size (in inches) would you like to have? (Integer from 12-17)',
     'How many laptop recommendations would you like? (Integer from 1-20)'
 ]
+
+# data_q = [
+#     'min_price', 'max_price',
+#     'processor', 'processing power',
+#     'RAM', 'OS', 'storage', 'display'
+# ]
 
 valid_options = [
     None,
@@ -55,11 +63,12 @@ box_spacing = 100
 
 class InputBox:
     """Create an Input Box to gather user input."""
-    def __init__(self, x, y, w, h, question, valid_opt):
+
+    def __init__(self, x, y, w, h, question, valid_opt, text: str = ''):
         self.active = False
         self.rect = pygame.Rect(x, y, w, h)
         self.color = color_inactive
-        self.text = ''
+        self.text = text
         self.question = question
         self.valid_options = valid_opt
 
@@ -113,19 +122,34 @@ class Button:
         self.specs = {}  # will include final data
         self.button_text = button_text
 
-    def event_handler(self, event, input_boxes: list):
-        """Handles the events occurring in the main loop"""
-
-        if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
-            for box in input_boxes:
-                if box[0].text > box[1].text:
-                    return None
-                if not box.check_validity():
-                    return None
-            for i, box in enumerate(input_boxes):
-                self.specs[questions[i]] = box.text
-            return self.specs
-        return None
+    # def event_handler(self, event, input_boxes: list):
+    #     """Handles the events occurring in the main loop"""
+    #
+    #     if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+    #         ct = 0
+    #         for box in input_boxes:
+    #             if box != '' and (input_boxes[0].text > input_boxes[1].text or not box.check_validity()):
+    #                 return None
+    #             elif box == '':
+    #                 continue
+    #             else:
+    #                 ct += 1
+    #             # if box[0].text > box[1].text:
+    #             #     return None
+    #             # if not box.check_validity():
+    #             #     return None
+    #
+    #         if ct < 2 or input_boxes[0] == '' or input_boxes[1] == '' or input_boxes[8] == '':
+    #             return None
+    #
+    #         empty_boxes = []
+    #         data_q = ['min_price', 'max_price', 'processor', 'processing power',
+    #                   'ram', 'os', 'storage', 'display(in inch)', 'limit']
+    #         for i, box in enumerate(input_boxes):
+    #             if box.text == '':
+    #                 empty_boxes.append(data_q[i])  # append 'kind'
+    #             self.specs[questions[i]] = box.text
+    #         return self.specs, empty_boxes
 
     def draw_box(self):
         """Draws the input box and text"""
@@ -138,6 +162,7 @@ class Button:
 class DisplayRecommendations:
     """New screen to display final laptop recs.
     """
+
     def __init__(self, recommendations):
         self.recommendations = recommendations
         self.scroll = 0
@@ -243,6 +268,7 @@ class DisplayRecommendations:
 def load_boxes():
     """Loads text input boxes to get user input about specs for laptop.
     """
+    global DUMMY_LAPTOP_ID
     pygame.init()
     form_screen = pygame.display.set_mode([1600, 900])
     pygame.display.set_caption("Laptop Recommendation Form")
@@ -261,7 +287,10 @@ def load_boxes():
     for i in range(half, len(questions)):
         x = 800
         y = 100 + (i - half) * box_spacing
-        input_boxes.append(InputBox(x, y, box_width, box_height, questions[i], valid_options[i]))
+        if i == len(questions) - 1:
+            input_boxes.append(InputBox(x, y, box_width, box_height, questions[i], valid_options[i], '10'))
+        else:
+            input_boxes.append(InputBox(x, y, box_width, box_height, questions[i], valid_options[i]))
 
     submit_button = Button(800, 700, box_width, box_height, "Submit")
     exit_button = Button(1050, 700, box_width, box_height, "Exit")
@@ -334,11 +363,11 @@ def load_boxes():
 
                         lim_key = list(user_specs)[8]
                         lim = int(user_specs[lim_key])
-                        graph, img_links = load_laptop_graph('laptops.csv')
+                        graph, img_links = load_laptop_graph('../laptops.csv')
                         price_tolerence = abs(int(list(user_specs.values())[0]) - int(list(user_specs.values())[1]))
-                        dummy_laptop_id = -1
-                        add_dummy(graph, user_specs)
-                        recs_id_list = graph.recommended_laptops(dummy_laptop_id, lim, price_tolerence)
+                        add_dummy(graph, user_specs, DUMMY_LAPTOP_ID)
+                        recs_id_list = graph.recommended_laptops(DUMMY_LAPTOP_ID, lim, price_tolerence)
+                        DUMMY_LAPTOP_ID -= 1
                         recs = graph.id_to_rec(recs_id_list, lim, img_links)
                         go_back = DisplayRecommendations(recs).display_recs(lim)
                         if not go_back:
@@ -369,19 +398,5 @@ def load_boxes():
 
 
 if __name__ == "__main__":
-    g = load_laptop_graph("laptops.csv")[0]
-
-    # op = g.recommended_laptops(-1, limit, diff)  # TODO: GET LIMIT SOMEHOW FUSDUFISUFH
-    # # TODO: forward to output screen
-    #
-    # print(op)
-    # # output_function(op, g)
-
-    # g = load_laptop_graph("laptops.csv")
-
+    g = load_laptop_graph("../laptops.csv")[0]
     specs = load_boxes()
-
-    # if specs:
-    #     print(specs)
-    # else:
-    #     print("Form was closed without submission.")
