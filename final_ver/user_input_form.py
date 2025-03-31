@@ -425,59 +425,6 @@ def load_boxes(dumm_id_: int = -1) -> None:
 
 if __name__ == "__main__":
 
-    pygame.init()
-
-    clock = pygame.time.Clock()
-    screen = pygame.display.set_mode([1600, 900])
-    font = pygame.font.Font(None, 20)
-
-    color_active = pygame.color.Color(179, 158, 181)
-    color_inactive = pygame.color.Color(80, 80, 80)
-    white = (255, 255, 255)
-    bg_color = (30, 30, 30)
-
-    dummy_laptop_id = -1
-
-    questions = [
-        'What is the minimum price you would pay for a laptop(CAD)? (*)',
-        'What is the maximum price you would pay for a laptop (CAD)? (*)',
-        'Which processor would you like to have? (Intel/AMD/Apple)',
-        'Which processing power would you like to have for the laptop? (Less/Medium/High)',
-        'How much RAM (Random Access Memory) would you like to have? (4 GB/8 GB/16 GB/32 GB)',
-        'What Operating System would you like to have? (Mac/Windows/Chrome)',
-        'How much storage (SSD) would you like to have? (128 GB/256 GB/512 GB/1 TB/2 TB)',
-        'Roughly, what display size (in inches) would you like to have? (Integer from 12-17)',
-        'How many laptop recommendations would you like? (Integer from 1-20) (*)'
-    ]
-
-    valid_options = [
-        None,
-        None,  # can be any price
-        ['Intel', 'AMD', 'Apple'],
-        ['Less', 'Medium', 'High'],
-        ['4 GB', '8 GB', '16 GB', '32 GB'],
-        ['Mac', 'Windows', 'Chrome'],
-        ['128 GB', '256 GB', '512 GB', '1 TB', '2 TB'],
-        [str(n) for n in range(12, 18)],
-        [str(i) for i in range(1, 21)]
-    ]
-
-    box_width = 200
-    box_height = 50
-    box_spacing = 100
-
-    screen_height = 900
-    item_height = 150
-
-    laptop_width = 300
-    laptop_height = 300
-    x_space = 50
-    y_space = 50
-    x_start = 100
-    y_start = 250
-    scroll_speed = 30
-
-    # specs = load_boxes()
     load_boxes(-1)
 
     doctest.testmod()
