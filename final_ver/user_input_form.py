@@ -202,7 +202,7 @@ class DisplayRecommendations:
                     return True  # to go back to form
 
                 elif event.type == pygame.MOUSEWHEEL:
-                    self.scroll -= event.y * scroll_speed
+                    self.scroll -= event.y * SCROLL_SPEED
                     self.scroll = max(0, min(self.scroll, self.total_height - SCREEN_HEIGHT))
 
             SCREEN.fill(BG_COLOR)
