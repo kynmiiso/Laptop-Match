@@ -224,11 +224,11 @@ class Graph:
 
 def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1) -> None:
     """Inject dummy laptop into graph"""
+    # based on information in the csv as well as the vertex kinds we are looking for
     data = ['', '', 'processor', 'processing power', 'ram', 'os', 'storage', 'display(in inch)']
 
     g.add_vertex(dummy_id, 'id')
     tot_price = 0
-    # diff = 0
 
     if specs_dict is not None:
         for ques, ans in specs_dict.items():
@@ -251,9 +251,9 @@ def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1) -> None:
 
 
 def _convert_split(s: str, mapping: dict) -> tuple[str, str]:
-    """
+    """Split string s to appropriate pieces of information, e.g. from "Intel
     s: string data
-    mapping: conditions thing; maps from broad category to specifics (e.g. {"Intel": {"low": ["i3"], "medium": ["i5"]}}
+    mapping: maps from broad category to specifics (e.g. {"Intel": {"low": ["i3"], "medium": ["i5"], ...}
     """
     broad = None
     for general_k in mapping.keys():

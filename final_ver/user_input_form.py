@@ -16,13 +16,29 @@ from graph_class import load_laptop_graph, add_dummy
 pygame.init()
 
 CLOCK = pygame.time.Clock()
-SCREEN = pygame.display.set_mode([1600, 900])
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 900
+SCREEN = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 FONT = pygame.font.Font(None, 20)
+
+ITEM_HEIGHT = 150
+
+LAPTOP_WIDTH = 300
+LAPTOP_HEIGHT = 300
+X_SPACE = 50
+Y_SPACE = 50
+X_START = 100
+Y_START = 250
+SCROLL_SPEED = 30
 
 COLOR_ACTIVE = pygame.color.Color(179, 158, 181)
 COLOR_INACTIVE = pygame.color.Color(80, 80, 80)
 WHITE = (255, 255, 255)
 BG_COLOR = (30, 30, 30)
+
+BOX_WIDTH = 200
+BOX_HEIGHT = 50
+BOX_SPACING = 100
 
 DUMMY_LAPTOP_ID = -1
 
@@ -52,10 +68,6 @@ VALID_OPTIONS = [
 
 DATA_Q = ['min_price', 'max_price', 'processor', 'processing power',
           'ram', 'os', 'storage', 'display(in inch)', 'limit']
-
-BOX_WIDTH = 200
-BOX_HEIGHT = 50
-BOX_SPACING = 100
 
 
 class InputBox:
@@ -179,6 +191,7 @@ class DisplayRecommendations:
         form when back button is pressed."""
 
         running = True
+        # global SCREEN
 
         while running:
             for event in pygame.event.get():
@@ -190,30 +203,30 @@ class DisplayRecommendations:
 
                 elif event.type == pygame.MOUSEWHEEL:
                     self.scroll -= event.y * scroll_speed
-                    self.scroll = max(0, min(self.scroll, self.total_height - screen_height))
+                    self.scroll = max(0, min(self.scroll, self.total_height - SCREEN_HEIGHT))
 
-            screen.fill(bg_color)
+            SCREEN.fill(BG_COLOR)
             title_font = pygame.font.Font(None, 30)
-            title_surf = title_font.render("Recommended Laptops", True, white)
-            screen.blit(title_surf, (650, 50 - self.scroll))
+            title_surf = title_font.render("Recommended Laptops", True, WHITE)
+            SCREEN.blit(title_surf, (650, 50 - self.scroll))
 
             primary_laptop = self.recommendations[0]
-            pygame.draw.rect(screen, color_inactive, pygame.Rect(100, 150 - self.scroll, 600, 400), 2)
+            pygame.draw.rect(SCREEN, COLOR_INACTIVE, pygame.Rect(100, 150 - self.scroll, 600, 400), 2)
 
-            name = font.render(f"Best Recommendation: {primary_laptop['Name']}", True, white)
-            screen.blit(name, (150, 200 - self.scroll))
+            name = FONT.render(f"Best Recommendation: {primary_laptop['Name']}", True, WHITE)
+            SCREEN.blit(name, (150, 200 - self.scroll))
 
             y_offset = 240
 
             for spec, value in primary_laptop.items():
                 if spec not in {'Name', 'Image'}:
-                    screen.blit(font.render(f"{spec}: {value}", True, white),
+                    SCREEN.blit(FONT.render(f"{spec}: {value}", True, WHITE),
                                 (150, y_offset - self.scroll))
                     y_offset += 50
                 if spec == 'Image':
                     image_data = BytesIO(requests.get(value).content)
                     img = pygame.transform.scale(pygame.image.load(image_data), (300, 200))
-                    screen.blit(img, (350, 270 - self.scroll))
+                    SCREEN.blit(img, (350, 270 - self.scroll))
 
             self.draw_text(limit)
 
@@ -226,10 +239,10 @@ class DisplayRecommendations:
                 row = (int(i) + 1) // 4
                 col = (int(i) + 1) % 4
 
-                x = x_start + col * (laptop_width + x_space)
-                y = y_start + row * (laptop_height + y_space) - self.scroll
-                if item_height < y < screen_height:
-                    pygame.draw.rect(screen, color_inactive, (x, y, laptop_width, laptop_height))
+                x = X_START + col * (LAPTOP_WIDTH + X_SPACE)
+                y = Y_START + row * (LAPTOP_HEIGHT + Y_SPACE) - self.scroll
+                if ITEM_HEIGHT < y < SCREEN_HEIGHT:
+                    pygame.draw.rect(SCREEN, COLOR_INACTIVE, (x, y, LAPTOP_WIDTH, LAPTOP_HEIGHT))
                     self.split_line(self.recommendations[i]['Name'], x, y)
 
         self.back_button.draw_box()
@@ -239,15 +252,15 @@ class DisplayRecommendations:
     def split_line(self, name: str, x: int, y: int) -> None:
         """Splits the text into 2 lines if longer than box."""
         if len(name) <= 40:
-            name_ = font.render(name, True, white)
-            screen.blit(name_, (x + 20, y + 20))
+            name_ = FONT.render(name, True, WHITE)
+            SCREEN.blit(name_, (x + 20, y + 20))
         else:
             rec_name_first_line = name[:40]
             rec_name_second_line = name[40:]
-            name_1 = font.render(f"{rec_name_first_line}", True, white)
-            name_2 = font.render(f"{rec_name_second_line}", True, white)
-            screen.blit(name_1, (x + 20, y + 20))
-            screen.blit(name_2, (x + 20, y + 40))
+            name_1 = FONT.render(f"{rec_name_first_line}", True, WHITE)
+            name_2 = FONT.render(f"{rec_name_second_line}", True, WHITE)
+            SCREEN.blit(name_1, (x + 20, y + 20))
+            SCREEN.blit(name_2, (x + 20, y + 40))
 
 
 def generate_random_specs(val_opt: list) -> list:
@@ -266,13 +279,13 @@ def generate_random_specs(val_opt: list) -> list:
 
 
 def mod_box(input_boxes: list[InputBox], data_spec_sample: list) -> None:
-    """modify input boxes contents to certain text"""
+    """Modify contents of each input box in input_boxes to each item in data_spec_sample in the same order"""
     for i, box in enumerate(input_boxes[0:8]):
         box.text = data_spec_sample[i]
 
 
 def verify(input_boxes: list[InputBox]) -> tuple[bool, str]:
-    """verify box contentes"""
+    """Verify contents of each input box in input_boxes"""
     all_valid = True
     filled = 0
     err_msg = ''
@@ -320,7 +333,11 @@ def get_user_specs(input_boxes: list[InputBox]) -> tuple[dict, list]:
 
 
 def submit(all_valid: bool, input_boxes: list[InputBox], dum_id: int = -1) -> None:
-    """submit all info"""
+    """Submit all information from input_boxes
+
+    dum_id represents the id of the "dummy laptop" created based on the users requested specs
+    all_valid verifies whether the information is valid and should be submitted
+    """
     if not all_valid:
         return
 
@@ -349,8 +366,6 @@ def load_boxes(dumm_id_: int = -1) -> None:
 
     input_boxes = []
 
-    # half = math.ceil(len(QUESTIONS) / 2)
-
     for i in range(math.ceil(len(QUESTIONS) / 2)):
         x = 100
         y = 100 + i * BOX_SPACING
@@ -366,9 +381,7 @@ def load_boxes(dumm_id_: int = -1) -> None:
     sample_specs = Button((150, 700, BOX_WIDTH, BOX_HEIGHT), "Randomise")
 
     run = True
-    # user_specs = None
     error_message = None
-    # show_error = False
 
     # main loop
     while run:

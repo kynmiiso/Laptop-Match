@@ -8,7 +8,7 @@ from python_ta import contracts
 from final_ver.user_input_form import load_boxes
 
 if __name__ == "__main__":
-    load_boxes()
+    load_boxes(-1)
 
     doctest.testmod()
     python_ta.check_all(config={
