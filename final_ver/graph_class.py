@@ -251,7 +251,9 @@ def add_dummy(g: Graph, specs_dict: dict, dummy_id: int = -1) -> None:
 
 
 def _convert_split(s: str, mapping: dict) -> tuple[str, str]:
-    """Split string s to appropriate pieces of information, e.g. from "Intel
+    """Split string s to appropriate pieces of information
+    e.g. from "i5 9th gen" to "Intel" and "Medium" (brand and processor speed)
+
     s: string data
     mapping: maps from broad category to specifics (e.g. {"Intel": {"low": ["i3"], "medium": ["i5"], ...}
     """
@@ -271,14 +273,15 @@ def _convert_split(s: str, mapping: dict) -> tuple[str, str]:
 
 
 def _convert_val(s: str, mapping: dict) -> str:
-    """
+    """Convert string s into standardised categories in mapping
+    e.g. from "64 GB SSD" to "64 GB"
+
     s: string data
-    mapping: mapping from output key to string in data or blank
+    mapping: mapping from output key to string in data or None
     """
     itm = None
     for k in mapping:
         itm = k
-        # if k.lower() in s.lower():
         if k.lower() in s.lower() or any(i.lower() in s.lower() for i in mapping[k]):
             # safety net if specific keyword is not found in s but s is still under category k
             return k
@@ -295,7 +298,8 @@ def _load_data(filename: str) -> dict:
 
 
 def load_laptop_graph(laptop_data_file: str, parameters_file: str) -> tuple[Graph, dict]:
-    """Return a book review graph corresponding to the given datasets and a dictionary mapping laptop to image link.
+    """Return a laptop unweighted graph corresponding to the given datasets and
+    a dictionary mapping laptop to image link.
 
     Preconditions:
         - laptop_data_file is the path to a CSV file corresponding to the laptop data
